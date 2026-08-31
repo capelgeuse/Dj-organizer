@@ -728,6 +728,22 @@
       "category": "Inicio",
       "bpm": 123,
       "destination": "Progressive House\\Inicio\\120-123 BPM\\AY.ATA - Something About You (Extended Mix) [Sekora].mp3"
+    },
+    {
+      "source": "E:\\Progressive House\\ayokay - Signs Station To Station Extended Mix-www.groovytunes.org.mp3",
+      "name": "ayokay - Signs Station To Station Extended Mix-www.groovytunes.org.mp3",
+      "genre": "Progressive House",
+      "category": "Ponchadas",
+      "bpm": 133,
+      "destination": "Progressive House\\Ponchadas\\132-135 BPM\\ayokay - Signs Station To Station Extended Mix-www.groovytunes.org.mp3"
+    },
+    {
+      "source": "E:\\Progressive House\\AØVA, Rama (AR) - 1974 (Matias Delongaro Extended Remix) [Addictive Sounds].mp3",
+      "name": "AØVA, Rama (AR) - 1974 (Matias Delongaro Extended Remix) [Addictive Sounds].mp3",
+      "genre": "Progressive House",
+      "category": "Inicio",
+      "bpm": 122,
+      "destination": "Progressive House\\Inicio\\120-123 BPM\\AØVA, Rama (AR) - 1974 (Matias Delongaro Extended Remix) [Addictive Sounds].mp3"
     }
   ],
   "omitidas": [
