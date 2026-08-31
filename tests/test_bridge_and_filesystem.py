@@ -142,6 +142,19 @@ class BridgeTests(unittest.TestCase):
 
 
 class FilesystemAuthorityTests(unittest.TestCase):
+    def test_intake_scope_is_root_files_and_unsorted_tree_only(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "direct.mp3").write_bytes(b"direct")
+            (root / "UNSORTED" / "nested").mkdir(parents=True)
+            (root / "UNSORTED" / "nested" / "nested.mp3").write_bytes(b"nested")
+            (root / "Already Sorted" / "song.mp3").parent.mkdir(parents=True)
+            (root / "Already Sorted" / "song.mp3").write_bytes(b"sorted")
+
+            paths = {path.relative_to(root).as_posix() for path in LibraryScope(root).paths()}
+
+            self.assertEqual(paths, {"direct.mp3", "UNSORTED/nested/nested.mp3"})
+
     def test_default_genre_routes_exclude_their_generated_folders(self):
         prefixes = destination_prefixes(default_routes())
 

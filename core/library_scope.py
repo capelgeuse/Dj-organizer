@@ -40,8 +40,8 @@ class LibraryScope:
         if not parts:
             return False
         if parts[0].casefold() == "unsorted":
-            return False
-        return any(parts[: len(prefix)] == prefix for prefix in self.excluded_prefixes if prefix)
+            return any(parts[: len(prefix)] == prefix for prefix in self.excluded_prefixes if prefix)
+        return True
 
     def paths(self) -> list[Path]:
         self.ensure_valid()
