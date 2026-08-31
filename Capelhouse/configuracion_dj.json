@@ -9,7 +9,8 @@
     "Indie Dance",
     "Trance",
     "Melodic Techno",
-    "EDM"
+    "EDM",
+    "Breaks"
   ],
   "categorias": [
     "Inicio",
@@ -744,6 +745,278 @@
       "category": "Inicio",
       "bpm": 122,
       "destination": "Progressive House\\Inicio\\120-123 BPM\\AØVA, Rama (AR) - 1974 (Matias Delongaro Extended Remix) [Addictive Sounds].mp3"
+    },
+    {
+      "source": "E:\\Progressive House\\26\\Bart Skils - Nexus.mp3",
+      "name": "Bart Skils - Nexus.mp3",
+      "genre": "Melodic House",
+      "category": "Ponchadas",
+      "bpm": 133,
+      "destination": "Melodic House\\Ponchadas\\132-135 BPM\\Bart Skils - Nexus.mp3"
+    },
+    {
+      "source": "E:\\Progressive House\\26\\Because of Art - Falling For (Extended Mix) [Anjunadeep].mp3",
+      "name": "Because of Art - Falling For (Extended Mix) [Anjunadeep].mp3",
+      "genre": "Melodic House",
+      "category": "Inicio",
+      "bpm": 125,
+      "destination": "Melodic House\\Inicio\\124-127 BPM\\Because of Art - Falling For (Extended Mix) [Anjunadeep].mp3"
+    },
+    {
+      "source": "E:\\Progressive House\\26\\Beckers, D-Nox - You Get Me (Extended Mix) [Sprout].mp3",
+      "name": "Beckers, D-Nox - You Get Me (Extended Mix) [Sprout].mp3",
+      "genre": "Progressive House",
+      "category": "Medio",
+      "bpm": 123,
+      "destination": "Progressive House\\Medio\\120-123 BPM\\Beckers, D-Nox - You Get Me (Extended Mix) [Sprout].mp3"
+    },
+    {
+      "source": "E:\\Progressive House\\Ben Böhmer - Erase (Rezident Extended Mix).mp3",
+      "name": "Ben Böhmer - Erase (Rezident Extended Mix).mp3",
+      "genre": "Progressive House",
+      "category": "Inicio",
+      "bpm": 124,
+      "destination": "Progressive House\\Inicio\\124-127 BPM\\Ben Böhmer - Erase (Rezident Extended Mix).mp3"
+    },
+    {
+      "source": "E:\\Progressive House\\26\\Bert Voorman - Missing (Original Mix) [Molon Labe Records].mp3",
+      "name": "Bert Voorman - Missing (Original Mix) [Molon Labe Records].mp3",
+      "genre": "Progressive House",
+      "category": "Inicio",
+      "bpm": 125,
+      "destination": "Progressive House\\Inicio\\124-127 BPM\\Bert Voorman - Missing (Original Mix) [Molon Labe Records].mp3"
+    },
+    {
+      "source": "E:\\Progressive House\\Julio 2025\\Bidwell, Bowers & Bidwell - All I Need (Extended Mix) [Enhanced Progressive].mp3",
+      "name": "Bidwell, Bowers & Bidwell - All I Need (Extended Mix) [Enhanced Progressive].mp3",
+      "genre": "Progressive House",
+      "category": "Medio",
+      "bpm": 126,
+      "destination": "Progressive House\\Medio\\124-127 BPM\\Bidwell, Bowers & Bidwell - All I Need (Extended Mix) [Enhanced Progressive].mp3"
+    },
+    {
+      "source": "E:\\Progressive House\\Black Loops - CDMX (Original Mix) [Freerange Records].mp3",
+      "name": "Black Loops - CDMX (Original Mix) [Freerange Records].mp3",
+      "genre": "Breaks",
+      "category": "Inicio",
+      "bpm": 122,
+      "destination": "Breaks\\Inicio\\120-123 BPM\\Black Loops - CDMX (Original Mix) [Freerange Records].mp3"
+    },
+    {
+      "source": "E:\\Progressive House\\26\\Blake.08 - The Change Of Love (Extended Mix) [Anjunadeep].mp3",
+      "name": "Blake.08 - The Change Of Love (Extended Mix) [Anjunadeep].mp3",
+      "genre": "Melodic House",
+      "category": "Medio",
+      "bpm": 126,
+      "destination": "Melodic House\\Medio\\124-127 BPM\\Blake.08 - The Change Of Love (Extended Mix) [Anjunadeep].mp3"
+    },
+    {
+      "source": "E:\\Progressive House\\Progressive House\\Boss Axis - Origami (DJ Version) [Euphonic Visions].mp3",
+      "name": "Boss Axis - Origami (DJ Version) [Euphonic Visions].mp3",
+      "genre": "Melodic House",
+      "category": "Inicio",
+      "bpm": 123,
+      "destination": "Melodic House\\Inicio\\120-123 BPM\\Boss Axis - Origami (DJ Version) [Euphonic Visions].mp3"
+    },
+    {
+      "source": "E:\\Progressive House\\Julio 2025\\Bowers & Bidwell - Wide Open (feat. Dida Extended Mix) [Enhanced Progressive].mp3",
+      "name": "Bowers & Bidwell - Wide Open (feat. Dida Extended Mix) [Enhanced Progressive].mp3",
+      "genre": "Trance",
+      "category": "Medio",
+      "bpm": 130,
+      "destination": "Trance\\Medio\\128-131 BPM\\Bowers & Bidwell - Wide Open (feat. Dida Extended Mix) [Enhanced Progressive].mp3"
+    },
+    {
+      "source": "E:\\Progressive House\\Progressive House\\Boycott - Talk To Me (Extended Mix) [Sekora].mp3",
+      "name": "Boycott - Talk To Me (Extended Mix) [Sekora].mp3",
+      "genre": "Melodic House",
+      "category": "Inicio",
+      "bpm": 122,
+      "destination": "Melodic House\\Inicio\\120-123 BPM\\Boycott - Talk To Me (Extended Mix) [Sekora].mp3"
+    },
+    {
+      "source": "E:\\Progressive House\\26\\Brann (AR) - The Morning After (Original Mix) [Plastic Fantastic Records].mp3",
+      "name": "Brann (AR) - The Morning After (Original Mix) [Plastic Fantastic Records].mp3",
+      "genre": "Progressive House",
+      "category": "Medio",
+      "bpm": 92,
+      "destination": "Progressive House\\Medio\\92-95 BPM\\Brann (AR) - The Morning After (Original Mix) [Plastic Fantastic Records].mp3"
+    },
+    {
+      "source": "E:\\Progressive House\\Julio 2025\\Braxton & Jody Wisternoff & James Grant - SpaceTime (Ezequiel Arias Remix) [Anjunadeep].mp3",
+      "name": "Braxton & Jody Wisternoff & James Grant - SpaceTime (Ezequiel Arias Remix) [Anjunadeep].mp3",
+      "genre": "Melodic House",
+      "category": "Inicio",
+      "bpm": 123,
+      "destination": "Melodic House\\Inicio\\120-123 BPM\\Braxton & Jody Wisternoff & James Grant - SpaceTime (Ezequiel Arias Remix) [Anjunadeep].mp3"
+    },
+    {
+      "source": "E:\\Progressive House\\Progressive House\\Brendel, Ceci - Radiant (Extended Mix) [Sekora].mp3",
+      "name": "Brendel, Ceci - Radiant (Extended Mix) [Sekora].mp3",
+      "genre": "Melodic House",
+      "category": "Medio",
+      "bpm": 122,
+      "destination": "Melodic House\\Medio\\120-123 BPM\\Brendel, Ceci - Radiant (Extended Mix) [Sekora].mp3"
+    },
+    {
+      "source": "E:\\Progressive House\\Octubre 25\\120 - 123\\Brigitte Belling - Never Forget (Original Mix) [Einmusika Recordings].mp3",
+      "name": "Brigitte Belling - Never Forget (Original Mix) [Einmusika Recordings].mp3",
+      "genre": "Melodic Techno",
+      "category": "Inicio",
+      "bpm": 123,
+      "destination": "Melodic Techno\\Inicio\\120-123 BPM\\Brigitte Belling - Never Forget (Original Mix) [Einmusika Recordings].mp3"
+    },
+    {
+      "source": "E:\\Progressive House\\26\\Budakid - Chromium (Original Mix) [Flores].mp3",
+      "name": "Budakid - Chromium (Original Mix) [Flores].mp3",
+      "genre": "Indie Dance",
+      "category": "Medio",
+      "bpm": 124,
+      "destination": "Indie Dance\\Medio\\124-127 BPM\\Budakid - Chromium (Original Mix) [Flores].mp3"
+    },
+    {
+      "source": "E:\\Progressive House\\26\\By The Light, Alta+mira - Sandman (Extended Mix) [Enormous Vision].mp3",
+      "name": "By The Light, Alta+mira - Sandman (Extended Mix) [Enormous Vision].mp3",
+      "genre": "Trance",
+      "category": "Inicio",
+      "bpm": 126,
+      "destination": "Trance\\Inicio\\124-127 BPM\\By The Light, Alta+mira - Sandman (Extended Mix) [Enormous Vision].mp3"
+    },
+    {
+      "source": "E:\\Progressive House\\26\\Byhon - Side by Side (Bruno Alonso Remix) [Tunnel Label].mp3",
+      "name": "Byhon - Side by Side (Bruno Alonso Remix) [Tunnel Label].mp3",
+      "genre": "Progressive House",
+      "category": "Inicio",
+      "bpm": 120,
+      "destination": "Progressive House\\Inicio\\120-123 BPM\\Byhon - Side by Side (Bruno Alonso Remix) [Tunnel Label].mp3"
+    },
+    {
+      "source": "E:\\Progressive House\\26\\Bákayan - Darari Darara (Original Mix) [ALA BØRA].mp3",
+      "name": "Bákayan - Darari Darara (Original Mix) [ALA BØRA].mp3",
+      "genre": "Indie Dance",
+      "category": "Medio",
+      "bpm": 127,
+      "destination": "Indie Dance\\Medio\\124-127 BPM\\Bákayan - Darari Darara (Original Mix) [ALA BØRA].mp3"
+    },
+    {
+      "source": "E:\\Progressive House\\Progressive House\\Calvin Capp - The Darkness (Original Mix) [Velorum Records].mp3",
+      "name": "Calvin Capp - The Darkness (Original Mix) [Velorum Records].mp3",
+      "genre": "Melodic Techno",
+      "category": "Medio",
+      "bpm": 123,
+      "destination": "Melodic Techno\\Medio\\120-123 BPM\\Calvin Capp - The Darkness (Original Mix) [Velorum Records].mp3"
+    },
+    {
+      "source": "E:\\Progressive House\\CAMILA (AR) - Prana (Original Mix) [Freegrant Music].mp3",
+      "name": "CAMILA (AR) - Prana (Original Mix) [Freegrant Music].mp3",
+      "genre": "Progressive House",
+      "category": "Ponchadas",
+      "bpm": 123,
+      "destination": "Progressive House\\Ponchadas\\120-123 BPM\\CAMILA (AR) - Prana (Original Mix) [Freegrant Music].mp3"
+    },
+    {
+      "source": "E:\\Progressive House\\Capelgeuse - Arp107 (Original Mix).wav",
+      "name": "Capelgeuse - Arp107 (Original Mix).wav",
+      "genre": "Progressive House",
+      "category": "Medio",
+      "bpm": 125,
+      "destination": "Progressive House\\Medio\\124-127 BPM\\Capelgeuse - Arp107 (Original Mix).wav"
+    },
+    {
+      "source": "E:\\Progressive House\\26\\Capelgeuse - Nairobi (Original Mix) - MASTER.wav",
+      "name": "Capelgeuse - Nairobi (Original Mix) - MASTER.wav",
+      "genre": "Progressive House",
+      "category": "Ponchadas",
+      "bpm": 126,
+      "destination": "Progressive House\\Ponchadas\\124-127 BPM\\Capelgeuse - Nairobi (Original Mix) - MASTER.wav"
+    },
+    {
+      "source": "E:\\Progressive House\\Capelgeuse - Nairobi 2.wav",
+      "name": "Capelgeuse - Nairobi 2.wav",
+      "genre": "Progressive House",
+      "category": "Medio",
+      "bpm": 125,
+      "destination": "Progressive House\\Medio\\124-127 BPM\\Capelgeuse - Nairobi 2.wav"
+    },
+    {
+      "source": "E:\\Progressive House\\Octubre 25\\Carerra & Tavares - Mind (Original Mix).mp3",
+      "name": "Carerra & Tavares - Mind (Original Mix).mp3",
+      "genre": "Progressive House",
+      "category": "Inicio",
+      "bpm": 122,
+      "destination": "Progressive House\\Inicio\\120-123 BPM\\Carerra & Tavares - Mind (Original Mix).mp3"
+    },
+    {
+      "source": "E:\\Progressive House\\Julio 2025\\CarHer - Relaxation (Extended Mix) [Redux Digital].mp3",
+      "name": "CarHer - Relaxation (Extended Mix) [Redux Digital].mp3",
+      "genre": "Trance",
+      "category": "Medio",
+      "bpm": 128,
+      "destination": "Trance\\Medio\\128-131 BPM\\CarHer - Relaxation (Extended Mix) [Redux Digital].mp3"
+    },
+    {
+      "source": "E:\\Progressive House\\Octubre 25\\120 - 123\\Catom - Celestia (Extended Mix) [Timeless Moment].mp3",
+      "name": "Catom - Celestia (Extended Mix) [Timeless Moment].mp3",
+      "genre": "Melodic Techno",
+      "category": "Medio",
+      "bpm": 123,
+      "destination": "Melodic Techno\\Medio\\120-123 BPM\\Catom - Celestia (Extended Mix) [Timeless Moment].mp3"
+    },
+    {
+      "source": "E:\\Progressive House\\Cendryma - Circles Extended Mix-www.groovytunes.org.mp3",
+      "name": "Cendryma - Circles Extended Mix-www.groovytunes.org.mp3",
+      "genre": "Progressive House",
+      "category": "Medio",
+      "bpm": 123,
+      "destination": "Progressive House\\Medio\\120-123 BPM\\Cendryma - Circles Extended Mix-www.groovytunes.org.mp3"
+    },
+    {
+      "source": "E:\\Progressive House\\Julio 2025\\Cendryma - Repressure (Extended Mix) [UV].mp3",
+      "name": "Cendryma - Repressure (Extended Mix) [UV].mp3",
+      "genre": "Progressive House",
+      "category": "Inicio",
+      "bpm": 121,
+      "destination": "Progressive House\\Inicio\\120-123 BPM\\Cendryma - Repressure (Extended Mix) [UV].mp3"
+    },
+    {
+      "source": "E:\\Progressive House\\26\\CHAKKOUR - Chasing Cars (Extended Mix) [Mushroom Pillow].mp3",
+      "name": "CHAKKOUR - Chasing Cars (Extended Mix) [Mushroom Pillow].mp3",
+      "genre": "Trance",
+      "category": "Ponchadas",
+      "bpm": 130,
+      "destination": "Trance\\Ponchadas\\128-131 BPM\\CHAKKOUR - Chasing Cars (Extended Mix) [Mushroom Pillow].mp3"
+    },
+    {
+      "source": "E:\\Progressive House\\Che Jose - Mantra-www.groovytunes.org.mp3",
+      "name": "Che Jose - Mantra-www.groovytunes.org.mp3",
+      "genre": "Melodic Techno",
+      "category": "Medio",
+      "bpm": 123,
+      "destination": "Melodic Techno\\Medio\\120-123 BPM\\Che Jose - Mantra-www.groovytunes.org.mp3"
+    },
+    {
+      "source": "E:\\Progressive House\\26\\Chizawa Q - Deep Dive (Original Mix) [Houstrike].mp3",
+      "name": "Chizawa Q - Deep Dive (Original Mix) [Houstrike].mp3",
+      "genre": "Progressive House",
+      "category": "Medio",
+      "bpm": 133,
+      "destination": "Progressive House\\Medio\\132-135 BPM\\Chizawa Q - Deep Dive (Original Mix) [Houstrike].mp3"
+    },
+    {
+      "source": "E:\\Progressive House\\26\\Chizawa Q - Yellow Storm (Original Mix) [Houstrike].mp3",
+      "name": "Chizawa Q - Yellow Storm (Original Mix) [Houstrike].mp3",
+      "genre": "Progressive House",
+      "category": "Medio",
+      "bpm": 128,
+      "destination": "Progressive House\\Medio\\128-131 BPM\\Chizawa Q - Yellow Storm (Original Mix) [Houstrike].mp3"
+    },
+    {
+      "source": "E:\\Progressive House\\26\\Chris Barag - Spiral Wakes (Original Mix) [Inti Rhythms Project].mp3",
+      "name": "Chris Barag - Spiral Wakes (Original Mix) [Inti Rhythms Project].mp3",
+      "genre": "Progressive House",
+      "category": "Inicio",
+      "bpm": 122,
+      "destination": "Progressive House\\Inicio\\120-123 BPM\\Chris Barag - Spiral Wakes (Original Mix) [Inti Rhythms Project].mp3"
     }
   ],
   "omitidas": [
