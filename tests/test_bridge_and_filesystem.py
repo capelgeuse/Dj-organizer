@@ -86,6 +86,7 @@ class BridgeTests(unittest.TestCase):
             root = Path(directory)
             (root / "zulu.mp3").write_bytes(b"zulu")
             (root / "alpha.flac").write_bytes(b"alpha")
+            (root / "cover.png").write_bytes(b"png-fixture")
             config = ConfigStore(root / "config.json")
             app = BackendApplication(config)
             config.set_root(str(root))
@@ -96,6 +97,7 @@ class BridgeTests(unittest.TestCase):
             self.assertFalse(summary["hasMore"])
             self.assertEqual([track["name"] for track in summary["tracks"]], ["alpha.flac", "zulu.mp3"])
             self.assertEqual(summary["tracks"][0]["relativePath"], "alpha.flac")
+            self.assertEqual(summary["tracks"][0]["artworkUri"], str(root / "cover.png"))
 
     def test_ping_and_shutdown_are_json_lines_without_gui_dependencies(self):
         process = subprocess.Popen(

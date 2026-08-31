@@ -1,6 +1,8 @@
 """Small, dependency-optional metadata adapter."""
 from __future__ import annotations
 
+import hashlib
+import os
 from pathlib import Path
 from typing import Any, TypedDict
 
@@ -53,6 +55,29 @@ def _artwork_path(path: Path) -> str | None:
     return None
 
 
+def _cache_embedded_artwork(path: Path, raw: Any) -> str | None:
+    pictures = list(getattr(raw, "pictures", []) or [])
+    if not pictures:
+        return None
+    picture = pictures[0]
+    data = getattr(picture, "data", None)
+    if not isinstance(data, (bytes, bytearray)) or not data:
+        return None
+    mime = str(getattr(picture, "mime", "image/jpeg"))
+    extension = {"image/png": ".png", "image/webp": ".webp"}.get(mime, ".jpg")
+    digest = hashlib.sha256(str(path).encode("utf-8") + bytes(data)).hexdigest()
+    configured_cache = os.environ.get("CAPELHOUSE_ARTWORK_DIR")
+    cache_root = Path(configured_cache) if configured_cache else Path.home() / ".capelhouse" / "artwork"
+    target = cache_root / f"{digest}{extension}"
+    try:
+        target.parent.mkdir(parents=True, exist_ok=True)
+        if not target.is_file():
+            target.write_bytes(bytes(data))
+        return str(target)
+    except OSError:
+        return None
+
+
 def read_metadata(path: Path) -> Metadata:
     result: Metadata = {
         "title": None,
@@ -78,6 +103,8 @@ def read_metadata(path: Path) -> Metadata:
         result["bpm"] = _bpm(tags or raw_tags)
         duration = getattr(info, "length", None)
         result["durationSeconds"] = round(float(duration), 3) if duration else None
-    except (OSError, TypeError, ValueError) as error:
+        if result["artworkUri"] is None:
+            result["artworkUri"] = _cache_embedded_artwork(path, raw)
+    except Exception as error:
         result["metadataError"] = type(error).__name__
     return result
