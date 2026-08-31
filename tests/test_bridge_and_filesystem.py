@@ -20,6 +20,16 @@ from core.sorting import sort_tracks
 
 
 class BridgeTests(unittest.TestCase):
+    def test_library_query_without_root_fails_closed(self):
+        from bridge.local_bridge import BackendApplication, BridgeException
+
+        with tempfile.TemporaryDirectory() as directory:
+            app = BackendApplication(ConfigStore(Path(directory) / "config.json"))
+            with self.assertRaises(BridgeException) as context:
+                app.load_library({})
+
+            self.assertEqual(context.exception.error.code.value, "INVALID_ROOT")
+
     def test_scan_job_reports_progress_and_completion(self):
         from bridge.local_bridge import BackendApplication
 

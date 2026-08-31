@@ -41,8 +41,12 @@ class BackendApplication:
 
     def _scope(self, root_value: str | None = None) -> LibraryScope:
         document = self.config.read()
-        root = Path(root_value or str(document.get("root", "")).strip()).expanduser()
-        if not str(root).strip() or not root.is_dir():
+        configured_root = str(document.get("root", "")).strip()
+        candidate = root_value.strip() if root_value is not None else configured_root
+        if not candidate:
+            raise BridgeException(BridgeError(ErrorCode.INVALID_ROOT, "Choose an existing music root."))
+        root = Path(candidate).expanduser()
+        if not root.is_dir():
             raise BridgeException(BridgeError(ErrorCode.INVALID_ROOT, "Choose an existing music root."))
         return LibraryScope(root, destination_prefixes(self.config.routes()))
 

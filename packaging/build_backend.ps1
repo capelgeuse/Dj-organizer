@@ -1,6 +1,7 @@
 # Build the Python sidecar from a Windows PowerShell terminal.
 $ErrorActionPreference = "Stop"
 $Repo = Split-Path -Parent $PSScriptRoot
+Set-Location $Repo
 $Python = if ($env:CAPELHOUSE_PYTHON) { $env:CAPELHOUSE_PYTHON } else { Join-Path $Repo ".venv\Scripts\python.exe" }
 
 if (-not (Test-Path $Python)) {
