@@ -1,0 +1,29 @@
+:root {
+  --bg: #0b0e12;
+  --text: #b8bdc5;
+  --mono: "Cascadia Code", "SFMono-Regular", Consolas, monospace;
+  --display: Georgia, "Times New Roman", serif;
+  color: var(--text);
+  background: var(--bg);
+  font-family: "Segoe UI", system-ui, sans-serif;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  min-width: 320px;
+  min-height: 100vh;
+  margin: 0;
+  background:
+    radial-gradient(circle at 14% -8%, rgba(215, 170, 75, 0.08), transparent 30rem),
+    linear-gradient(180deg, #0d1116 0%, #090b0e 100%);
+}
+
+button {
+  -webkit-tap-highlight-color: transparent;
+}

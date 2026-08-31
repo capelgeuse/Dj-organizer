@@ -1,7 +1,7 @@
 # Progress
 
 - [x] P0 — Auditar la arquitectura actual y congelar ownership del dominio
-- [ ] P1 — Establecer el workspace React + Vite
+- [x] P1 — Establecer el workspace React + Vite
 - [ ] P2 — Establecer el shell de escritorio Tauri
 - [ ] P3 — Establecer el bridge Python ↔ desktop
 - [ ] P4 — Probar una consulta backend real end-to-end
