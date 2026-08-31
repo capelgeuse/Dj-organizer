@@ -12,7 +12,7 @@ def bpm_bucket(bpm: float | None) -> str:
 
 
 def sort_tracks(tracks: list[TrackRecord], field: SortField, direction: SortDirection) -> list[TrackRecord]:
-    def key(track: TrackRecord) -> tuple[bool, object, str]:
+    def value_key(track: TrackRecord) -> tuple[bool, object, str]:
         value: object | None = {
             SortField.NAME: track.name,
             SortField.TITLE: track.title,
@@ -23,4 +23,8 @@ def sort_tracks(tracks: list[TrackRecord], field: SortField, direction: SortDire
         }[field]
         return value is None, value.casefold() if isinstance(value, str) else (value if value is not None else 0), track.relative_path.casefold()
 
-    return sorted(tracks, key=key, reverse=direction is SortDirection.DESCENDING)
+    known = [track for track in tracks if value_key(track)[0] is False]
+    unknown = [track for track in tracks if value_key(track)[0] is True]
+    known.sort(key=value_key, reverse=direction is SortDirection.DESCENDING)
+    unknown.sort(key=lambda track: track.relative_path.casefold())
+    return known + unknown

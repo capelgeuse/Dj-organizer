@@ -78,6 +78,17 @@ class BackendApplication:
         document = self.config.set_routes(routes)
         return {"routes": document["routes"]}
 
+    def set_route_path(self, payload: dict[str, Any]) -> dict[str, Any]:
+        route_id = str(payload.get("routeId", ""))
+        path = str(payload.get("path", "")).strip()
+        label = str(payload.get("label", "")).strip() or None
+        try:
+            document = self.config.set_route_path(route_id, path, label)
+        except ValueError as error:
+            code = ErrorCode.DESTINATION_OUTSIDE_ROOT if str(error) == "DESTINATION_OUTSIDE_ROOT" else ErrorCode.INVALID_ROUTE
+            raise BridgeException(BridgeError(code, "Route folder must be inside the selected root.")) from error
+        return {"routes": document["routes"]}
+
     def handle(self, command: str, payload: dict[str, Any]) -> tuple[dict[str, Any], bool]:
         if command == "ping":
             return {"ready": True, "protocolVersion": 1}, False
@@ -91,6 +102,8 @@ class BackendApplication:
             return self.set_root(payload), False
         if command == "set_routes":
             return self.set_routes(payload), False
+        if command == "set_route_path":
+            return self.set_route_path(payload), False
         if command == "move_track":
             result = self.classifier.move(str(payload.get("trackId", "")), str(payload.get("routeId", "")))
             return result.to_dict(), False

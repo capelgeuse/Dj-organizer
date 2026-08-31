@@ -18,6 +18,7 @@ class Command(StrEnum):
     UNDO_LAST_MOVE = "undo_last_move"
     GET_CONFIG = "get_config"
     SET_ROUTES = "set_routes"
+    SET_ROUTE_PATH = "set_route_path"
 
 
 class SortField(StrEnum):

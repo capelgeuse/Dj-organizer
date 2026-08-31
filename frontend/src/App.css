@@ -96,6 +96,57 @@ h2 {
   box-shadow: 0 0 0 4px rgba(215, 170, 75, 0.13);
 }
 
+.status-chip-checking { color: #e8c979; }
+.status-chip-ready { border-color: #397754; color: #8ad4a4; }
+.status-chip-ready .status-dot { background: #70c995; box-shadow: 0 0 0 4px rgba(112, 201, 149, 0.13); }
+.status-chip-offline { border-color: #713f43; color: #e99393; }
+.status-chip-offline .status-dot { background: #e07a7a; box-shadow: 0 0 0 4px rgba(224, 122, 122, 0.13); }
+
+.root-form {
+  display: grid;
+  flex: 1 1 480px;
+  gap: 8px;
+  max-width: 650px;
+}
+
+.root-form label {
+  color: #858b94;
+  font-family: var(--mono);
+  font-size: 0.66rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.root-form > div {
+  display: flex;
+  gap: 8px;
+}
+
+.root-form input {
+  min-width: 0;
+  flex: 1;
+  border: 1px solid #414750;
+  background: #11151a;
+  padding: 0 12px;
+  color: #f4f1eb;
+  font: inherit;
+}
+
+.root-form input:focus {
+  border-color: #d7aa4b;
+  outline: 2px solid rgba(215, 170, 75, 0.2);
+  outline-offset: 1px;
+}
+
+.error-banner {
+  margin-top: 16px;
+  border: 1px solid #713f43;
+  background: rgba(224, 122, 122, 0.08);
+  padding: 12px 16px;
+  color: #e99393;
+  font-size: 0.84rem;
+}
+
 .setup-panel {
   display: flex;
   align-items: center;
@@ -118,6 +169,19 @@ h2 {
   min-height: 44px;
   padding: 0 18px;
 }
+
+.secondary-button {
+  min-height: 44px;
+  border: 1px solid #414750;
+  background: #171c22;
+  padding: 0 14px;
+  color: #c5c8cd;
+  font: inherit;
+  font-weight: 700;
+}
+
+.secondary-button:hover:not(:disabled),
+.secondary-button:focus-visible { border-color: #8a6d32; color: #f4f1eb; outline: none; }
 
 .primary-button:disabled,
 .route-grid button:disabled {
@@ -148,6 +212,12 @@ h2 {
   gap: 16px;
   border-bottom: 1px solid #2c3036;
   padding-bottom: 18px;
+}
+
+.queue-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
 }
 
 .count-badge {
@@ -187,6 +257,154 @@ h2 {
   color: #d7aa4b;
   font-size: 1.8rem;
 }
+
+.track-list {
+  display: grid;
+  gap: 8px;
+  max-height: 500px;
+  overflow: auto;
+  padding-top: 18px;
+}
+
+.track-row {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 14px;
+  border: 1px solid #2c3036;
+  background: #11151a;
+  padding: 10px;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  transition: border-color 150ms ease, background 150ms ease;
+}
+
+.track-row:hover,
+.track-row:focus-visible,
+.track-row-selected {
+  border-color: #8a6d32;
+  background: #171c22;
+  outline: none;
+}
+
+.track-row-selected {
+  box-shadow: inset 3px 0 #d7aa4b;
+}
+
+.track-artwork {
+  position: relative;
+  display: grid;
+  width: 54px;
+  height: 54px;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid #66542f;
+  background: #1a1e24;
+  color: #d7aa4b;
+  font-size: 1.35rem;
+}
+
+.track-artwork img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.track-play-overlay {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(7, 9, 12, 0.62);
+}
+
+.track-play-overlay button {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  border: 1px solid #e8c979;
+  border-radius: 50%;
+  background: #171b20;
+  color: #e8c979;
+  font: inherit;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.track-copy {
+  display: grid;
+  min-width: 0;
+  gap: 4px;
+}
+
+.track-copy strong,
+.track-copy span,
+.track-copy small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.track-copy strong { color: #f4f1eb; font-size: 0.9rem; }
+.track-copy span { color: #c5c8cd; font-size: 0.78rem; }
+.track-copy small { color: #858b94; font-family: var(--mono); font-size: 0.64rem; }
+
+.sort-menu {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.sort-menu select,
+.sort-menu button {
+  min-height: 30px;
+  border: 1px solid #414750;
+  background: #11151a;
+  color: #c5c8cd;
+  font: inherit;
+  font-size: 0.68rem;
+}
+
+.sort-menu select { padding: 0 6px; }
+.sort-menu button { width: 30px; color: #e8c979; }
+
+.audio-controls {
+  display: grid;
+  gap: 10px;
+  margin-top: 24px;
+  border-top: 1px solid #2c3036;
+  padding-top: 20px;
+}
+
+.audio-controls-heading {
+  display: grid;
+  gap: 5px;
+}
+
+.audio-controls-heading strong { overflow: hidden; color: #f4f1eb; font-size: 0.84rem; text-overflow: ellipsis; white-space: nowrap; }
+.audio-controls audio { width: 100%; }
+.audio-controls p { color: #747b84; font-size: 0.68rem; line-height: 1.4; }
+
+.route-pad { margin-top: 18px; }
+.route-grid button { display: grid; gap: 2px; place-items: center; padding: 5px; }
+.route-grid button strong { font-size: 0.86rem; }
+.route-grid button span { overflow: hidden; max-width: 100%; color: #858b94; font-size: 0.5rem; text-overflow: ellipsis; white-space: nowrap; }
+.route-configure-button { width: 100%; margin-top: 10px; border: 1px solid #414750; background: transparent; padding: 9px; color: #a9adb4; font: inherit; font-size: 0.68rem; font-weight: 700; }
+.route-configure-button:hover:not(:disabled), .route-configure-button:focus-visible { border-color: #8a6d32; color: #f4f1eb; outline: none; }
+
+.route-settings { display: grid; gap: 12px; margin-top: 18px; border-top: 1px solid #2c3036; padding-top: 18px; }
+.route-settings-heading { display: flex; justify-content: space-between; gap: 10px; }
+.route-settings-heading h3 { margin: 5px 0 0; color: #f4f1eb; font-family: var(--display); font-size: 1.25rem; font-weight: 500; }
+.route-settings-heading > span { color: #858b94; font-size: 0.62rem; text-align: right; }
+.route-settings-list { display: grid; gap: 8px; max-height: 380px; overflow: auto; }
+.route-setting { display: grid; grid-template-columns: 24px minmax(0, 1fr); gap: 6px; }
+.route-setting > strong { display: grid; grid-row: span 2; place-items: center; color: #e8c979; font-family: var(--mono); font-size: 0.72rem; }
+.route-setting input, .route-setting button { min-width: 0; border: 1px solid #414750; background: #11151a; padding: 7px; color: #c5c8cd; font: inherit; font-size: 0.62rem; }
+.route-setting button { grid-column: 2; color: #a9adb4; }
+.route-setting input:focus, .route-setting button:focus-visible { border-color: #8a6d32; outline: none; }
+.route-settings-error { margin: 0; color: #e99393; font-size: 0.68rem; line-height: 1.35; }
 
 .control-panel {
   border-left: 1px solid #2c3036;
@@ -263,6 +481,12 @@ kbd {
   .workspace-preview {
     grid-template-columns: 1fr;
   }
+
+  .root-form > div { flex-direction: column; }
+  .root-form input,
+  .secondary-button { min-height: 44px; }
+
+  .queue-toolbar { align-items: flex-end; flex-direction: column; gap: 6px; }
 
   .control-panel {
     border-top: 1px solid #2c3036;

@@ -1,69 +1,222 @@
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import './App.css'
+import { getConfig, loadLibrary, moveTrack, pickDirectory, ping, setRoot as persistRoot } from './bridge/desktop-bridge'
+import type { LibrarySummary, RoutePreset, TrackRecord } from './bridge/contracts'
+import { AppShell } from './components/AppShell'
+import { AudioControls } from './components/AudioControls'
+import { RoutePad } from './components/RoutePad'
+import { RouteSettings } from './components/RouteSettings'
+import { SortMenu } from './components/SortMenu'
+import { TrackRow } from './components/TrackRow'
 
-const destinations = Array.from({ length: 9 }, (_, index) => index + 1)
+type BridgeStatus = 'checking' | 'ready' | 'offline'
+
+const fallbackRoutes: RoutePreset[] = Array.from({ length: 9 }, (_, index) => ({
+  routeId: String(index + 1),
+  label: `Route ${index + 1}`,
+  relativeDestination: 'Needs Review/{bpmBucket}',
+  category: null,
+  genre: null,
+}))
+
+const defaultSort: LibrarySummary['sort'] = { field: 'name', direction: 'asc' }
 
 function App() {
-  return (
-    <main className="app-shell" aria-label="CapelHouse local desktop application">
-      <header className="app-header">
-        <div>
-          <p className="eyebrow">CAPELHOUSE / LOCAL DESKTOP</p>
-          <h1>Music organizer</h1>
-          <p className="subtitle">React + Vite UI shell · Python remains the local authority</p>
-        </div>
-        <span className="status-chip status-chip-warning" role="status">
-          <span className="status-dot" aria-hidden="true" />
-          Bridge not connected
-        </span>
-      </header>
+  const [bridgeStatus, setBridgeStatus] = useState<BridgeStatus>('checking')
+  const [root, setRoot] = useState('')
+  const [routes, setRoutes] = useState<RoutePreset[]>(fallbackRoutes)
+  const [routeSettingsOpen, setRouteSettingsOpen] = useState(false)
+  const [summary, setSummary] = useState<LibrarySummary | null>(null)
+  const [sort, setSort] = useState<LibrarySummary['sort']>(defaultSort)
+  const [selectedIndex, setSelectedIndex] = useState(-1)
+  const [error, setError] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [playing, setPlaying] = useState(false)
+  const audioRef = useRef<HTMLAudioElement>(null)
 
+  const selectedTrack: TrackRecord | null = useMemo(
+    () => summary?.tracks[selectedIndex] ?? null,
+    [selectedIndex, summary],
+  )
+
+  useEffect(() => {
+    let mounted = true
+    ping()
+      .then(async () => {
+        const config = await getConfig()
+        if (!mounted) return
+        setBridgeStatus('ready')
+        setRoot(config.root)
+        setRoutes(config.routes)
+      })
+      .catch(() => { if (mounted) setBridgeStatus('offline') })
+    return () => { mounted = false }
+  }, [])
+
+  const refreshLibrary = useCallback(async (rootValue: string, sortValue: LibrarySummary['sort']) => {
+    const next = await loadLibrary(rootValue.trim() || undefined, sortValue.field, sortValue.direction)
+    setSummary(next)
+    setSelectedIndex(next.tracks.length ? 0 : -1)
+    setPlaying(false)
+    audioRef.current?.pause()
+  }, [])
+
+  async function handleLoadLibrary() {
+    setLoading(true)
+    setError(null)
+    try {
+      const nextRoot = root.trim()
+      if (nextRoot) await persistRoot(nextRoot)
+      await refreshLibrary(nextRoot, sort)
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Could not load the local library.')
+      setSummary(null)
+      setSelectedIndex(-1)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  async function handlePickDirectory() {
+    try {
+      const selected = await pickDirectory()
+      if (selected) setRoot(selected)
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Could not open the native folder picker.')
+    }
+  }
+
+  const handleMove = useCallback(async (routeId: string) => {
+    if (!selectedTrack) return
+    setLoading(true)
+    setError(null)
+    try {
+      const result = await moveTrack(selectedTrack.trackId, routeId)
+      if (result.status !== 'moved') {
+        setError(result.error?.message ?? `Move failed: ${result.status}`)
+        return
+      }
+      await refreshLibrary('', sort)
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Could not move the selected track.')
+    } finally {
+      setLoading(false)
+    }
+  }, [refreshLibrary, selectedTrack, sort])
+
+  async function handleSort(field: LibrarySummary['sort']['field'], direction: LibrarySummary['sort']['direction']) {
+    const nextSort = { field, direction }
+    setSort(nextSort)
+    if (!summary || bridgeStatus !== 'ready') return
+    setLoading(true)
+    setError(null)
+    try {
+      await refreshLibrary('', nextSort)
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Could not sort the local library.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const selectTrack = useCallback((index: number) => {
+    setSelectedIndex(index)
+    setPlaying(false)
+    audioRef.current?.pause()
+  }, [])
+
+  function togglePlayback() {
+    if (!selectedTrack || !audioRef.current) return
+    if (playing) audioRef.current.pause()
+    else void audioRef.current.play().catch(() => setError('This track could not be played by the local audio engine.'))
+  }
+
+  useEffect(() => {
+    function handleKeyboard(event: KeyboardEvent) {
+      const target = event.target as HTMLElement | null
+      if (!target || target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName)) return
+      if (!summary?.tracks.length || bridgeStatus !== 'ready') return
+      if (event.code === 'KeyW') {
+        event.preventDefault()
+        selectTrack(Math.max(0, selectedIndex - 1))
+      } else if (event.code === 'KeyS') {
+        event.preventDefault()
+        selectTrack(Math.min(summary.tracks.length - 1, selectedIndex + 1))
+      } else if (event.code === 'KeyA' || event.code === 'KeyD') {
+        event.preventDefault()
+        const audio = audioRef.current
+        if (audio) audio.currentTime = Math.max(0, audio.currentTime + (event.code === 'KeyA' ? -5 : 5))
+      } else {
+        const match = event.code.match(/^Numpad([1-9])$/)
+        if (match && !loading) {
+          event.preventDefault()
+          void handleMove(match[1])
+        }
+      }
+    }
+    window.addEventListener('keydown', handleKeyboard)
+    return () => window.removeEventListener('keydown', handleKeyboard)
+  }, [bridgeStatus, handleMove, loading, selectTrack, selectedIndex, summary])
+
+  return (
+    <AppShell bridgeStatus={bridgeStatus}>
       <section className="setup-panel" aria-labelledby="setup-title">
         <div>
-          <p className="eyebrow">FIRST CONNECTION</p>
-          <h2 id="setup-title">Choose a local music root</h2>
-          <p className="body-copy">
-            The desktop bridge will load the real library here. No music is uploaded and no browser window is required.
-          </p>
+          <p className="eyebrow">LOCAL LIBRARY</p>
+          <h2 id="setup-title">Choose a music root</h2>
+          <p className="body-copy">Python scans and organizes the real filesystem. Audio and metadata stay local.</p>
         </div>
-        <button className="primary-button" type="button" disabled>
-          Connect local bridge
-        </button>
+        <div className="root-form">
+          <label htmlFor="music-root">Root path</label>
+          <div>
+            <input id="music-root" value={root} onChange={(event) => setRoot(event.target.value)} placeholder="C:\\Music\\Unsorted" disabled={bridgeStatus !== 'ready'} />
+            <button type="button" className="secondary-button" onClick={() => void handlePickDirectory()} disabled={bridgeStatus !== 'ready'}>Browse</button>
+            <button className="primary-button" type="button" onClick={() => void handleLoadLibrary()} disabled={bridgeStatus !== 'ready' || loading}>
+              {loading ? 'Working…' : 'Load library'}
+            </button>
+          </div>
+        </div>
       </section>
 
-      <section className="workspace-preview" aria-label="Library workspace preview">
+      {error && <p className="error-banner" role="alert">{error}</p>}
+
+      <section className="workspace-preview" aria-label="Music library workspace">
         <div className="queue-panel">
           <div className="section-heading">
             <div>
               <p className="eyebrow">UNSORTED QUEUE</p>
-              <h2>Library waiting for bridge</h2>
+              <h2>{summary ? `${summary.totalTracks} tracks in scope` : 'Library waiting for bridge'}</h2>
             </div>
-            <span className="count-badge">— tracks</span>
+            <div className="queue-toolbar">
+              <span className="count-badge">{summary ? `${summary.returnedTracks} shown` : '— tracks'}</span>
+              <SortMenu sort={summary?.sort ?? sort} onChange={(field, direction) => void handleSort(field, direction)} />
+            </div>
           </div>
-          <div className="empty-state">
-            <span className="empty-icon" aria-hidden="true">♪</span>
-            <strong>No library loaded</strong>
-            <span>Python will provide metadata, artwork and the sorted queue.</span>
-          </div>
+          {summary?.tracks.length ? (
+            <div className="track-list" aria-label="Loaded local tracks">
+              {summary.tracks.map((track, index) => <TrackRow key={track.trackId} track={track} selected={index === selectedIndex} playing={index === selectedIndex && playing} onSelect={() => selectTrack(index)} onTogglePlay={togglePlayback} />)}
+            </div>
+          ) : (
+            <div className="empty-state">
+              <span className="empty-icon" aria-hidden="true">♪</span>
+              <strong>{summary ? 'No audio files found' : 'No library loaded'}</strong>
+              <span>{summary ? 'Choose a root containing local audio files.' : 'Load a local root to begin sorting.'}</span>
+            </div>
+          )}
         </div>
 
-        <aside className="control-panel" aria-label="Keyboard and route controls">
+        <aside className="control-panel" aria-label="Keyboard, player and route controls">
           <p className="eyebrow">CONTROL MAP</p>
           <div className="control-row"><kbd>W</kbd><span>Previous song</span></div>
           <div className="control-row"><kbd>S</kbd><span>Next song</span></div>
           <div className="control-row"><kbd>A</kbd><span>Rewind 5 seconds</span></div>
           <div className="control-row"><kbd>D</kbd><span>Fast-forward 5 seconds</span></div>
-          <div className="route-heading"><span>Numpad routes</span><small>Configured destinations</small></div>
-          <div className="route-grid">
-            {destinations.map((destination) => <button key={destination} type="button" disabled>{destination}</button>)}
-          </div>
+          <AudioControls track={selectedTrack} audioRef={audioRef} onPlay={() => setPlaying(true)} onPause={() => setPlaying(false)} onEnded={() => setPlaying(false)} />
+          <RoutePad routes={routes} selectedTrackId={selectedTrack?.trackId ?? null} disabled={bridgeStatus !== 'ready' || loading} onRoute={(routeId) => void handleMove(routeId)} onConfigure={() => setRouteSettingsOpen((open) => !open)} />
+          {routeSettingsOpen && <RouteSettings routes={routes} disabled={bridgeStatus !== 'ready' || loading} onRoutesChanged={setRoutes} />}
         </aside>
       </section>
-
-      <footer className="app-footer">
-        <span>OFFLINE-FIRST · LOCAL FILESYSTEM · NO REMOTE SERVICE</span>
-        <span>Layer A contracts ready · P0 complete</span>
-      </footer>
-    </main>
+    </AppShell>
   )
 }
 

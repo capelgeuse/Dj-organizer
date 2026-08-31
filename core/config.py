@@ -103,3 +103,21 @@ class ConfigStore:
         document = self.read()
         document["routes"] = routes
         return self.write(document)
+
+    def set_route_path(self, route_id: str, path: str, label: str | None = None) -> dict[str, Any]:
+        document = self.read()
+        root = Path(str(document.get("root", "")).strip()).expanduser().resolve()
+        selected = Path(path).expanduser().resolve()
+        if not root.is_dir() or root not in selected.parents or selected == root:
+            raise ValueError("DESTINATION_OUTSIDE_ROOT")
+        relative = selected.relative_to(root).as_posix().rstrip("/") + "/{bpmBucket}"
+        routes = list(document.get("routes", []))
+        for route in routes:
+            if isinstance(route, dict) and str(route.get("routeId")) == route_id:
+                route["relativeDestination"] = relative
+                if label is not None and label.strip():
+                    route["label"] = label.strip()
+                break
+        else:
+            raise ValueError("INVALID_ROUTE")
+        return self.write({**document, "routes": routes})
