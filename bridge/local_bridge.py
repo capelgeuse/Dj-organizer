@@ -3,7 +3,10 @@ from __future__ import annotations
 
 import json
 import sys
+from concurrent.futures import Future, ThreadPoolExecutor
+from dataclasses import dataclass
 from pathlib import Path
+from threading import Event, Lock
 from typing import Any, TextIO
 
 from architecture.contracts import (
@@ -15,15 +18,26 @@ from architecture.contracts import (
 from architecture.errors import BridgeError, ErrorCode
 from core.classifier import Classifier
 from core.config import ConfigStore
-from core.library_scope import LibraryScope
+from core.library_scope import LibraryScope, ScanCancelled
 from core.routes import destination_prefixes
 from core.sorting import sort_tracks
+
+
+@dataclass
+class ScanJob:
+    future: Future[dict[str, Any]]
+    cancel: Event
+    progress: dict[str, int]
+    lock: Lock
 
 
 class BackendApplication:
     def __init__(self, config: ConfigStore | None = None):
         self.config = config or ConfigStore()
         self.classifier = Classifier(self.config)
+        self.executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix="capelhouse-scan")
+        self.jobs: dict[str, ScanJob] = {}
+        self.jobs_lock = Lock()
 
     def _scope(self, root_value: str | None = None) -> LibraryScope:
         document = self.config.read()
@@ -43,11 +57,11 @@ class BackendApplication:
         except ValueError as error:
             raise BridgeException(BridgeError(ErrorCode.INVALID_REQUEST, "Unsupported sort field or direction.")) from error
 
-    def load_library(self, payload: dict[str, Any]) -> dict[str, Any]:
+    def _load_library(self, payload: dict[str, Any], progress: Any = None, cancel: Event | None = None) -> dict[str, Any]:
         config = self.config.read()
         scope = self._scope(str(payload.get("root", "")).strip() or None)
         field, direction = self._sort(payload, config)
-        tracks = sort_tracks(scope.tracks(), field, direction)
+        tracks = sort_tracks(scope.tracks(progress=progress, cancel=cancel), field, direction)
         try:
             offset = max(0, int(payload.get("offset", 0)))
             limit = min(500, max(1, int(payload.get("limit", 200))))
@@ -56,6 +70,63 @@ class BackendApplication:
         page = tuple(tracks[offset : offset + limit])
         summary = LibrarySummary(scope.root.as_posix(), len(tracks), len(page), offset + len(page) < len(tracks), field, direction, page)
         return summary.to_dict()
+
+    def load_library(self, payload: dict[str, Any]) -> dict[str, Any]:
+        return self._load_library(payload)
+
+    def start_library_scan(self, payload: dict[str, Any]) -> dict[str, Any]:
+        job_id = f"job-{id(payload):x}-{len(self.jobs) + 1}"
+        cancel = Event()
+        progress_state = {"completed": 0, "total": 0}
+        progress_lock = Lock()
+
+        def update_progress(completed: int, total: int) -> None:
+            with progress_lock:
+                progress_state["completed"] = completed
+                progress_state["total"] = total
+
+        future = self.executor.submit(self._load_library, payload, update_progress, cancel)
+        with self.jobs_lock:
+            self.jobs[job_id] = ScanJob(future, cancel, progress_state, progress_lock)
+        return {"jobId": job_id, "state": "running"}
+
+    def poll_job(self, payload: dict[str, Any]) -> dict[str, Any]:
+        job_id = str(payload.get("jobId", ""))
+        with self.jobs_lock:
+            job = self.jobs.get(job_id)
+        if job is None:
+            raise BridgeException(BridgeError(ErrorCode.INVALID_REQUEST, "Unknown scan job."))
+        with job.lock:
+            progress = dict(job.progress)
+        if not job.future.done():
+            return {"jobId": job_id, "state": "running", "progress": progress}
+        try:
+            data = job.future.result()
+        except ScanCancelled:
+            state = {"jobId": job_id, "state": "cancelled", "progress": progress}
+        except Exception as error:
+            state = {"jobId": job_id, "state": "failed", "progress": progress, "error": BridgeError(ErrorCode.INTERNAL_ERROR, str(error), retryable=True).to_dict()}
+        else:
+            state = {"jobId": job_id, "state": "complete", "progress": progress, "data": data}
+        with self.jobs_lock:
+            self.jobs.pop(job_id, None)
+        return state
+
+    def cancel_job(self, payload: dict[str, Any]) -> dict[str, Any]:
+        job_id = str(payload.get("jobId", ""))
+        with self.jobs_lock:
+            job = self.jobs.get(job_id)
+        if job is None:
+            raise BridgeException(BridgeError(ErrorCode.INVALID_REQUEST, "Unknown scan job."))
+        job.cancel.set()
+        return {"jobId": job_id, "state": "cancelling"}
+
+    def close(self) -> None:
+        with self.jobs_lock:
+            jobs = list(self.jobs.values())
+        for job in jobs:
+            job.cancel.set()
+        self.executor.shutdown(wait=False, cancel_futures=True)
 
     def get_config(self) -> dict[str, Any]:
         document = self.config.read()
@@ -93,7 +164,14 @@ class BackendApplication:
         if command == "ping":
             return {"ready": True, "protocolVersion": 1}, False
         if command == "shutdown":
+            self.close()
             return {"shuttingDown": True}, True
+        if command == "start_library_scan":
+            return self.start_library_scan(payload), False
+        if command == "poll_job":
+            return self.poll_job(payload), False
+        if command == "cancel_job":
+            return self.cancel_job(payload), False
         if command in {"load_library", "get_track_page"}:
             return self.load_library(payload), False
         if command == "get_config":
@@ -128,27 +206,30 @@ def _payload(value: Any) -> dict[str, Any]:
 
 def serve(input_stream: TextIO, output_stream: TextIO, application: BackendApplication | None = None) -> None:
     app = application or BackendApplication()
-    for line in input_stream:
-        request_id = ""
-        should_shutdown = False
-        try:
-            request = json.loads(line)
-            if not isinstance(request, dict):
-                raise BridgeException(BridgeError(ErrorCode.INVALID_REQUEST, "Request must be a JSON object."))
-            request_id = str(request.get("id", ""))
-            command = str(request.get("command", ""))
-            data, should_shutdown = app.handle(command, _payload(request.get("payload", {})))
-            response = BridgeResponse(request_id, True, data=data)
-        except BridgeException as error:
-            response = BridgeResponse(request_id, False, error=error.error.to_dict())
-        except json.JSONDecodeError:
-            response = BridgeResponse(request_id, False, error=BridgeError(ErrorCode.BRIDGE_PROTOCOL_ERROR, "Malformed JSON request.").to_dict())
-        except Exception as error:  # Last-resort protocol boundary; details stay structured.
-            response = BridgeResponse(request_id, False, error=BridgeError(ErrorCode.INTERNAL_ERROR, str(error), retryable=True).to_dict())
-        output_stream.write(json.dumps(response.to_dict(), ensure_ascii=False) + "\n")
-        output_stream.flush()
-        if should_shutdown:
-            break
+    try:
+        for line in input_stream:
+            request_id = ""
+            should_shutdown = False
+            try:
+                request = json.loads(line)
+                if not isinstance(request, dict):
+                    raise BridgeException(BridgeError(ErrorCode.INVALID_REQUEST, "Request must be a JSON object."))
+                request_id = str(request.get("id", ""))
+                command = str(request.get("command", ""))
+                data, should_shutdown = app.handle(command, _payload(request.get("payload", {})))
+                response = BridgeResponse(request_id, True, data=data)
+            except BridgeException as error:
+                response = BridgeResponse(request_id, False, error=error.error.to_dict())
+            except json.JSONDecodeError:
+                response = BridgeResponse(request_id, False, error=BridgeError(ErrorCode.BRIDGE_PROTOCOL_ERROR, "Malformed JSON request.").to_dict())
+            except Exception as error:  # Last-resort protocol boundary; details stay structured.
+                response = BridgeResponse(request_id, False, error=BridgeError(ErrorCode.INTERNAL_ERROR, str(error), retryable=True).to_dict())
+            output_stream.write(json.dumps(response.to_dict(), ensure_ascii=False) + "\n")
+            output_stream.flush()
+            if should_shutdown:
+                break
+    finally:
+        app.close()
 
 
 def main() -> None:

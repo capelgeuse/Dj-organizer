@@ -147,6 +147,18 @@ h2 {
   font-size: 0.84rem;
 }
 
+.progress-panel {
+  display: grid;
+  flex: 0 0 180px;
+  gap: 6px;
+  color: #a9adb4;
+  font-family: var(--mono);
+  font-size: 0.62rem;
+}
+
+.progress-panel progress { width: 100%; accent-color: #d7aa4b; }
+.progress-panel small { color: #858b94; }
+
 .setup-panel {
   display: flex;
   align-items: center;

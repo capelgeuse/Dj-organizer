@@ -5,6 +5,7 @@ import json
 import subprocess
 import sys
 import tempfile
+import time
 import unittest
 from pathlib import Path
 
@@ -17,6 +18,28 @@ from core.sorting import sort_tracks
 
 
 class BridgeTests(unittest.TestCase):
+    def test_scan_job_reports_progress_and_completion(self):
+        from bridge.local_bridge import BackendApplication
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "one.mp3").write_bytes(b"one")
+            (root / "two.mp3").write_bytes(b"two")
+            config = ConfigStore(root / "config.json")
+            app = BackendApplication(config)
+            config.set_root(str(root))
+            started = app.start_library_scan({})
+            state = app.poll_job({"jobId": started["jobId"]})
+            deadline = time.monotonic() + 2
+            while state["state"] == "running" and time.monotonic() < deadline:
+                time.sleep(0.01)
+                state = app.poll_job({"jobId": started["jobId"]})
+
+            self.assertEqual(state["state"], "complete")
+            self.assertEqual(state["progress"]["completed"], 2)
+            self.assertEqual(state["data"]["totalTracks"], 2)
+            app.close()
+
     def test_protocol_query_then_move_returns_refreshable_state(self):
         from bridge.local_bridge import BackendApplication, serve
         from io import StringIO

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import './App.css'
-import { getConfig, loadLibrary, moveTrack, pickDirectory, ping, setRoot as persistRoot } from './bridge/desktop-bridge'
+import { getConfig, moveTrack, pickDirectory, ping, scanLibrary, setRoot as persistRoot } from './bridge/desktop-bridge'
 import type { LibrarySummary, RoutePreset, TrackRecord } from './bridge/contracts'
 import { AppShell } from './components/AppShell'
 import { AudioControls } from './components/AudioControls'
@@ -31,8 +31,10 @@ function App() {
   const [selectedIndex, setSelectedIndex] = useState(-1)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [progress, setProgress] = useState<{ completed: number; total: number } | null>(null)
   const [playing, setPlaying] = useState(false)
   const audioRef = useRef<HTMLAudioElement>(null)
+  const scanAbortRef = useRef<AbortController | null>(null)
 
   const selectedTrack: TrackRecord | null = useMemo(
     () => summary?.tracks[selectedIndex] ?? null,
@@ -54,11 +56,19 @@ function App() {
   }, [])
 
   const refreshLibrary = useCallback(async (rootValue: string, sortValue: LibrarySummary['sort']) => {
-    const next = await loadLibrary(rootValue.trim() || undefined, sortValue.field, sortValue.direction)
-    setSummary(next)
-    setSelectedIndex(next.tracks.length ? 0 : -1)
-    setPlaying(false)
-    audioRef.current?.pause()
+    const controller = new AbortController()
+    scanAbortRef.current = controller
+    setProgress({ completed: 0, total: 0 })
+    try {
+      const next = await scanLibrary(rootValue.trim() || undefined, sortValue, setProgress, controller.signal)
+      setSummary(next)
+      setSelectedIndex(next.tracks.length ? 0 : -1)
+      setPlaying(false)
+      audioRef.current?.pause()
+    } finally {
+      scanAbortRef.current = null
+      setProgress(null)
+    }
   }, [])
 
   async function handleLoadLibrary() {
@@ -84,6 +94,10 @@ function App() {
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Could not open the native folder picker.')
     }
+  }
+
+  function cancelScan() {
+    scanAbortRef.current?.abort()
   }
 
   const handleMove = useCallback(async (routeId: string) => {
@@ -174,8 +188,10 @@ function App() {
             <button className="primary-button" type="button" onClick={() => void handleLoadLibrary()} disabled={bridgeStatus !== 'ready' || loading}>
               {loading ? 'Working…' : 'Load library'}
             </button>
+            {progress && <button type="button" className="secondary-button" onClick={cancelScan}>Cancel scan ({progress.completed}/{progress.total || '…'})</button>}
           </div>
         </div>
+        {progress && <div className="progress-panel" role="status"><span>Scanning local metadata</span><progress max={progress.total || undefined} value={progress.total ? progress.completed : undefined} /><small>{progress.completed}/{progress.total || '…'} tracks</small></div>}
       </section>
 
       {error && <p className="error-banner" role="alert">{error}</p>}

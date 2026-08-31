@@ -1,6 +1,6 @@
 import { invoke } from '@tauri-apps/api/core'
 import { open } from '@tauri-apps/plugin-dialog'
-import type { BridgeReady, BridgeRequest, BridgeResponse, ConfigSnapshot, LibrarySummary, MoveResult } from './contracts'
+import type { BridgeError, BridgeReady, BridgeRequest, BridgeResponse, ConfigSnapshot, LibrarySummary, MoveResult, RoutePreset } from './contracts'
 
 let requestSequence = 0
 
@@ -31,6 +31,29 @@ export function loadLibrary(root?: string, sortField?: LibrarySummary['sort']['f
   })
 }
 
+type ScanStart = { jobId: string; state: 'running' }
+type ScanPoll = { jobId: string; state: 'running' | 'complete' | 'failed' | 'cancelled'; progress: { completed: number; total: number }; data?: LibrarySummary; error?: BridgeError }
+
+export async function scanLibrary(root: string | undefined, sort: LibrarySummary['sort'], onProgress: (progress: ScanPoll['progress']) => void, signal?: AbortSignal): Promise<LibrarySummary> {
+  const started = await request<ScanStart>('start_library_scan', {
+    ...(root ? { root } : {}),
+    sortField: sort.field,
+    sortDirection: sort.direction,
+  })
+  while (true) {
+    if (signal?.aborted) {
+      await request<{ jobId: string; state: 'cancelling' }>('cancel_job', { jobId: started.jobId })
+      throw new Error('Scan cancelled.')
+    }
+    const state = await request<ScanPoll>('poll_job', { jobId: started.jobId })
+    onProgress(state.progress)
+    if (state.state === 'complete' && state.data) return state.data
+    if (state.state === 'cancelled') throw new Error('Scan cancelled.')
+    if (state.state === 'failed') throw new Error(state.error?.message ?? 'Library scan failed.')
+    await new Promise((resolve) => window.setTimeout(resolve, 80))
+  }
+}
+
 export function getConfig(): Promise<ConfigSnapshot> {
   return request<ConfigSnapshot>('get_config')
 }
@@ -39,12 +62,12 @@ export function setRoot(root: string): Promise<{ root: string; configPath: strin
   return request<{ root: string; configPath: string }>('set_root', { root })
 }
 
-export function setRoutes(routes: import('./contracts').RoutePreset[]): Promise<{ routes: import('./contracts').RoutePreset[] }> {
-  return request<{ routes: import('./contracts').RoutePreset[] }>('set_routes', { routes })
+export function setRoutes(routes: RoutePreset[]): Promise<{ routes: RoutePreset[] }> {
+  return request<{ routes: RoutePreset[] }>('set_routes', { routes })
 }
 
-export function setRoutePath(routeId: string, path: string, label?: string): Promise<{ routes: import('./contracts').RoutePreset[] }> {
-  return request<{ routes: import('./contracts').RoutePreset[] }>('set_route_path', { routeId, path, label })
+export function setRoutePath(routeId: string, path: string, label?: string): Promise<{ routes: RoutePreset[] }> {
+  return request<{ routes: RoutePreset[] }>('set_route_path', { routeId, path, label })
 }
 
 export async function pickDirectory(): Promise<string | null> {

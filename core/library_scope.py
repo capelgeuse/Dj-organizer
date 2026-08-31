@@ -2,13 +2,18 @@
 from __future__ import annotations
 
 import hashlib
+from threading import Event
 from pathlib import Path
-from typing import Iterable
+from typing import Callable, Iterable
 
 from architecture.contracts import TrackRecord
 from core.metadata import read_metadata
 
 AUDIO_EXTENSIONS = frozenset({".mp3", ".wav", ".ogg", ".flac", ".m4a", ".aac"})
+
+
+class ScanCancelled(Exception):
+    """Raised when a scan is cancelled before its next track is read."""
 
 
 def track_id_for(relative_path: Path) -> str:
@@ -49,9 +54,13 @@ class LibraryScope:
                 candidates.append(path)
         return candidates
 
-    def tracks(self) -> list[TrackRecord]:
+    def tracks(self, progress: Callable[[int, int], None] | None = None, cancel: Event | None = None) -> list[TrackRecord]:
         records: list[TrackRecord] = []
-        for path in self.paths():
+        paths = self.paths()
+        total = len(paths)
+        for index, path in enumerate(paths, start=1):
+            if cancel is not None and cancel.is_set():
+                raise ScanCancelled()
             relative = path.relative_to(self.root)
             metadata = read_metadata(path)
             records.append(TrackRecord(
@@ -66,6 +75,8 @@ class LibraryScope:
                 duration_seconds=metadata["durationSeconds"],
                 artwork_uri=metadata["artworkUri"],
             ))
+            if progress is not None:
+                progress(index, total)
         return records
 
     def find(self, track_id: str) -> TrackRecord | None:
