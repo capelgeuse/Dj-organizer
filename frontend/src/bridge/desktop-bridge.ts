@@ -79,6 +79,10 @@ export function moveTrack(trackId: string, routeId: string): Promise<MoveResult>
   return request<MoveResult>('move_track', { trackId, routeId })
 }
 
+export function undoLastMove(): Promise<MoveResult> {
+  return request<MoveResult>('undo_last_move')
+}
+
 export function shutdownBridge(): Promise<{ shuttingDown: boolean }> {
   return request<{ shuttingDown: boolean }>('shutdown')
 }

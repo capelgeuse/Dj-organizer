@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import './App.css'
-import { getConfig, moveTrack, pickDirectory, ping, scanLibrary, setRoot as persistRoot } from './bridge/desktop-bridge'
-import type { LibrarySummary, RoutePreset, TrackRecord } from './bridge/contracts'
+import { getConfig, moveTrack, pickDirectory, ping, scanLibrary, setRoot as persistRoot, undoLastMove } from './bridge/desktop-bridge'
+import type { LibrarySummary, MoveResult, RoutePreset, TrackRecord } from './bridge/contracts'
 import { AppShell } from './components/AppShell'
 import { AudioControls } from './components/AudioControls'
 import { RoutePad } from './components/RoutePad'
@@ -33,6 +33,7 @@ function App() {
   const [loading, setLoading] = useState(false)
   const [progress, setProgress] = useState<{ completed: number; total: number } | null>(null)
   const [playing, setPlaying] = useState(false)
+  const [lastMove, setLastMove] = useState<MoveResult | null>(null)
   const audioRef = useRef<HTMLAudioElement>(null)
   const scanAbortRef = useRef<AbortController | null>(null)
 
@@ -110,6 +111,7 @@ function App() {
         setError(result.error?.message ?? `Move failed: ${result.status}`)
         return
       }
+      setLastMove(result)
       await refreshLibrary('', sort)
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Could not move the selected track.')
@@ -117,6 +119,25 @@ function App() {
       setLoading(false)
     }
   }, [refreshLibrary, selectedTrack, sort])
+
+  async function handleUndo() {
+    if (!lastMove) return
+    setLoading(true)
+    setError(null)
+    try {
+      const result = await undoLastMove()
+      if (result.status !== 'moved') {
+        setError(result.error?.message ?? `Undo failed: ${result.status}`)
+        return
+      }
+      setLastMove(null)
+      await refreshLibrary('', sort)
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Could not undo the last move.')
+    } finally {
+      setLoading(false)
+    }
+  }
 
   async function handleSort(field: LibrarySummary['sort']['field'], direction: LibrarySummary['sort']['direction']) {
     const nextSort = { field, direction }
@@ -195,6 +216,7 @@ function App() {
       </section>
 
       {error && <p className="error-banner" role="alert">{error}</p>}
+      {lastMove && <p className="success-banner" role="status">Moved locally to {lastMove.destinationPath}<button type="button" onClick={() => void handleUndo()} disabled={loading}>Undo</button></p>}
 
       <section className="workspace-preview" aria-label="Music library workspace">
         <div className="queue-panel">

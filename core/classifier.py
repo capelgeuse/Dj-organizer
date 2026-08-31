@@ -5,11 +5,12 @@ import errno
 import os
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from dataclasses import replace
 
 from architecture.contracts import MoveResult, MoveStatus, RoutePreset
 from architecture.errors import BridgeError, ErrorCode
 from core.config import ConfigStore
+from core.bpm import analyse_bpm
 from core.library_scope import LibraryScope
 from core.routes import destination_prefixes, resolve_destination
 
@@ -46,7 +47,10 @@ class Classifier:
         if route is None:
             return self._error_result(track_id, source, MoveStatus.INVALID_ROUTE, BridgeError(ErrorCode.INVALID_ROUTE, "Route is not configured."))
         try:
-            relative_destination = resolve_destination(route, source_record)
+            effective_record = source_record
+            if effective_record.bpm is None:
+                effective_record = replace(effective_record, bpm=analyse_bpm(source))
+            relative_destination = resolve_destination(route, effective_record)
             destination = (scope.root / relative_destination / source.name).resolve()
             root = scope.root
             if root not in destination.parents:

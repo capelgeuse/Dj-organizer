@@ -23,12 +23,17 @@
       }
     ],
     "security": {
-      "csp": null
+      "csp": "default-src 'self'; img-src 'self' asset: data: blob:; media-src 'self' asset: blob:; style-src 'self' 'unsafe-inline'; script-src 'self'",
+      "assetProtocol": {
+        "enable": true,
+        "scope": ["**"]
+      }
     }
   },
   "bundle": {
     "active": true,
     "targets": "all",
+    "externalBin": ["binaries/backend_bridge"],
     "icon": ["icons/icon.png"]
   }
 }

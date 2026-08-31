@@ -36,7 +36,12 @@ def resolve_destination(route: RoutePreset, track: TrackRecord) -> Path:
 def destination_prefixes(routes: list[RoutePreset]) -> list[str]:
     prefixes: list[str] = []
     for route in routes:
-        parts = route.relative_destination.replace("\\", "/").split("/")
+        template = route.relative_destination.replace("\\", "/")
+        if route.genre:
+            template = template.replace("{genre}", route.genre)
+        if route.category:
+            template = template.replace("{category}", route.category)
+        parts = template.split("/")
         static_parts: list[str] = []
         for part in parts:
             if part.startswith("{"):

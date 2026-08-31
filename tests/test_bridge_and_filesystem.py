@@ -14,6 +14,8 @@ from architecture.contracts import SortDirection, SortField, TrackRecord
 from core.classifier import Classifier
 from core.config import ConfigStore
 from core.library_scope import LibraryScope, track_id_for
+from core.config import default_routes
+from core.routes import destination_prefixes
 from core.sorting import sort_tracks
 
 
@@ -128,6 +130,14 @@ class BridgeTests(unittest.TestCase):
 
 
 class FilesystemAuthorityTests(unittest.TestCase):
+    def test_default_genre_routes_exclude_their_generated_folders(self):
+        prefixes = destination_prefixes(default_routes())
+
+        self.assertIn("House/Inicio", prefixes)
+        self.assertIn("Techno/Ponchadas", prefixes)
+        self.assertIn("Progressive House/Medio", prefixes)
+        self.assertIn("Needs Review", prefixes)
+
     def test_sorting_keeps_unknown_values_after_known_values_in_both_directions(self):
         def track(name: str, bpm: float | None) -> TrackRecord:
             return TrackRecord(f"id-{name}", f"C:/{name}", name, name, None, None, bpm, None, None)
