@@ -1,0 +1,737 @@
+{
+  "biblioteca": "E:\\",
+  "entrada": "E:\\Progressive House",
+  "generos": [
+    "House",
+    "Techno",
+    "Progressive House",
+    "Melodic House",
+    "Indie Dance",
+    "Trance",
+    "Melodic Techno",
+    "EDM"
+  ],
+  "categorias": [
+    "Inicio",
+    "Medio",
+    "Ponchadas"
+  ],
+  "revisadas": [
+    {
+      "source": "C:\\Users\\LENOVO\\Music\\Musica\\03. Naju - Studio 1 Original Mix-www.groovytunes.org.mp3",
+      "name": "03. Naju - Studio 1 Original Mix-www.groovytunes.org.mp3",
+      "genre": "Melodic House",
+      "category": "Medio",
+      "bpm": 129,
+      "destination": "Melodic House\\Medio\\128-131 BPM\\03. Naju - Studio 1 Original Mix-www.groovytunes.org.mp3"
+    },
+    {
+      "source": "C:\\Users\\LENOVO\\Music\\Musica\\04-yaars-scarab_(extended_mix).mp3",
+      "name": "04-yaars-scarab_(extended_mix).mp3",
+      "genre": "Melodic House",
+      "category": "Medio",
+      "bpm": 126,
+      "destination": "Melodic House\\Medio\\124-127 BPM\\04-yaars-scarab_(extended_mix).mp3"
+    },
+    {
+      "source": "C:\\Users\\LENOVO\\Music\\Musica\\0072. James Holden feat. Julie Thompson - Nothing (93 Returning Mix).mp3",
+      "name": "0072. James Holden feat. Julie Thompson - Nothing (93 Returning Mix).mp3",
+      "genre": "Progressive House",
+      "category": "Medio",
+      "bpm": 129,
+      "destination": "Progressive House\\Medio\\128-131 BPM\\0072. James Holden feat. Julie Thompson - Nothing (93 Returning Mix).mp3"
+    },
+    {
+      "source": "C:\\Users\\LENOVO\\Music\\Musica\\14. P.O.S. - Thunder & Sunshine (Extended Mix).mp3",
+      "name": "14. P.O.S. - Thunder & Sunshine (Extended Mix).mp3",
+      "genre": "Progressive House",
+      "category": "Inicio",
+      "bpm": 124,
+      "destination": "Progressive House\\Inicio\\124-127 BPM\\14. P.O.S. - Thunder & Sunshine (Extended Mix).mp3"
+    },
+    {
+      "source": "C:\\Users\\LENOVO\\Music\\Musica\\Fireground - Aquaria (Original Mix) [Fides].mp3",
+      "name": "Fireground - Aquaria (Original Mix) [Fides].mp3",
+      "genre": "House",
+      "category": "Ponchadas",
+      "bpm": 133,
+      "destination": "House\\Ponchadas\\132-135 BPM\\Fireground - Aquaria (Original Mix) [Fides].mp3"
+    },
+    {
+      "source": "C:\\Users\\LENOVO\\Music\\Musica\\Freefall - Skydive (Paul Thomas & Bluum's Midnight Extended Mix) [UV].mp3",
+      "name": "Freefall - Skydive (Paul Thomas & Bluum's Midnight Extended Mix) [UV].mp3",
+      "genre": "House",
+      "category": "Medio",
+      "bpm": 122,
+      "destination": "House\\Medio\\120-123 BPM\\Freefall - Skydive (Paul Thomas & Bluum's Midnight Extended Mix) [UV].mp3"
+    },
+    {
+      "source": "C:\\Users\\LENOVO\\Music\\Musica\\GUMR - Acid Freq  [Freaky Nation Records].mp3",
+      "name": "GUMR - Acid Freq  [Freaky Nation Records].mp3",
+      "genre": "House",
+      "category": "Inicio",
+      "bpm": 127,
+      "destination": "House\\Inicio\\124-127 BPM\\GUMR - Acid Freq  [Freaky Nation Records].mp3"
+    },
+    {
+      "source": "C:\\Users\\LENOVO\\Music\\Musica\\Rafael Cerato - Agapo (Original Mix) [Diynamic].mp3",
+      "name": "Rafael Cerato - Agapo (Original Mix) [Diynamic].mp3",
+      "genre": "Indie Dance",
+      "category": "Inicio",
+      "bpm": 124,
+      "destination": "Indie Dance\\Inicio\\124-127 BPM\\Rafael Cerato - Agapo (Original Mix) [Diynamic].mp3"
+    },
+    {
+      "source": "C:\\Users\\LENOVO\\Music\\Musica\\Tobi Mack - I'm a Dreamer (Extended Version) [iM Electronica].mp3",
+      "name": "Tobi Mack - I'm a Dreamer (Extended Version) [iM Electronica].mp3",
+      "genre": "Indie Dance",
+      "category": "Inicio",
+      "bpm": 121,
+      "destination": "Indie Dance\\Inicio\\120-123 BPM\\Tobi Mack - I'm a Dreamer (Extended Version) [iM Electronica].mp3"
+    },
+    {
+      "source": "C:\\Users\\LENOVO\\Music\\Musica\\Too Young, Yoel Daynis - Who Are We (Original Mix) [Diynamic].mp3",
+      "name": "Too Young, Yoel Daynis - Who Are We (Original Mix) [Diynamic].mp3",
+      "genre": "House",
+      "category": "Inicio",
+      "bpm": 124,
+      "destination": "House\\Inicio\\124-127 BPM\\Too Young, Yoel Daynis - Who Are We (Original Mix) [Diynamic].mp3"
+    },
+    {
+      "source": "E:\\Progressive House\\Julio 26\\Diana J - Techno (Original Mix) [OXYNOIZ].mp3",
+      "name": "Diana J - Techno (Original Mix) [OXYNOIZ].mp3",
+      "genre": "Progressive House",
+      "category": "Inicio",
+      "bpm": 125,
+      "destination": "Progressive House\\Inicio\\124-127 BPM\\Diana J - Techno (Original Mix) [OXYNOIZ].mp3"
+    },
+    {
+      "source": "E:\\Progressive House\\Julio 26\\Dosem - Full Senses (Extended Mix) [Anjunabeats].mp3",
+      "name": "Dosem - Full Senses (Extended Mix) [Anjunabeats].mp3",
+      "genre": "Progressive House",
+      "category": "Medio",
+      "bpm": 127,
+      "destination": "Progressive House\\Medio\\124-127 BPM\\Dosem - Full Senses (Extended Mix) [Anjunabeats].mp3"
+    },
+    {
+      "source": "E:\\Progressive House\\Julio 26\\Dosem - Sensations (Extended Mix) [Anjunadeep].mp3",
+      "name": "Dosem - Sensations (Extended Mix) [Anjunadeep].mp3",
+      "genre": "Progressive House",
+      "category": "Inicio",
+      "bpm": 125,
+      "destination": "Progressive House\\Inicio\\124-127 BPM\\Dosem - Sensations (Extended Mix) [Anjunadeep].mp3"
+    },
+    {
+      "source": "E:\\Progressive House\\Julio 26\\Dosem, SOHMI - The Light (Extended Mix) [Purified Records].mp3",
+      "name": "Dosem, SOHMI - The Light (Extended Mix) [Purified Records].mp3",
+      "genre": "Progressive House",
+      "category": "Inicio",
+      "bpm": 127,
+      "destination": "Progressive House\\Inicio\\124-127 BPM\\Dosem, SOHMI - The Light (Extended Mix) [Purified Records].mp3"
+    },
+    {
+      "source": "E:\\Progressive House\\Julio 26\\Durante, Emi Galvan - Lunar Circuit (Extended Mix) [Anjunadeep].mp3",
+      "name": "Durante, Emi Galvan - Lunar Circuit (Extended Mix) [Anjunadeep].mp3",
+      "genre": "Progressive House",
+      "category": "Inicio",
+      "bpm": 124,
+      "destination": "Progressive House\\Inicio\\124-127 BPM\\Durante, Emi Galvan - Lunar Circuit (Extended Mix) [Anjunadeep].mp3"
+    },
+    {
+      "source": "E:\\Progressive House\\Julio 26\\Durante, Mayro - Mantra (Extended Mix) [Anjunadeep].mp3",
+      "name": "Durante, Mayro - Mantra (Extended Mix) [Anjunadeep].mp3",
+      "genre": "Progressive House",
+      "category": "Medio",
+      "bpm": 124,
+      "destination": "Progressive House\\Medio\\124-127 BPM\\Durante, Mayro - Mantra (Extended Mix) [Anjunadeep].mp3"
+    },
+    {
+      "source": "E:\\Progressive House\\Julio 26\\Frederico Gordiux - Adapting Vibes (Original Mix) [M99].mp3",
+      "name": "Frederico Gordiux - Adapting Vibes (Original Mix) [M99].mp3",
+      "genre": "Progressive House",
+      "category": "Medio",
+      "bpm": 126,
+      "destination": "Progressive House\\Medio\\124-127 BPM\\Frederico Gordiux - Adapting Vibes (Original Mix) [M99].mp3"
+    },
+    {
+      "source": "E:\\Progressive House\\Julio 26\\G.Feity - Do It Now (Original Mix) [Azzure Records].mp3",
+      "name": "G.Feity - Do It Now (Original Mix) [Azzure Records].mp3",
+      "genre": "Progressive House",
+      "category": "Medio",
+      "bpm": 126,
+      "destination": "Progressive House\\Medio\\124-127 BPM\\G.Feity - Do It Now (Original Mix) [Azzure Records].mp3"
+    },
+    {
+      "source": "E:\\Progressive House\\Julio 26\\Influence (IN), SHERRNX - Breaking Point (Original Mix) [Forensic Records].mp3",
+      "name": "Influence (IN), SHERRNX - Breaking Point (Original Mix) [Forensic Records].mp3",
+      "genre": "Progressive House",
+      "category": "Medio",
+      "bpm": 120,
+      "destination": "Progressive House\\Medio\\120-123 BPM\\Influence (IN), SHERRNX - Breaking Point (Original Mix) [Forensic Records].mp3"
+    },
+    {
+      "source": "E:\\Progressive House\\Julio 26\\Mattim - Bare Circuit (Original Mix) [District Rec].mp3",
+      "name": "Mattim - Bare Circuit (Original Mix) [District Rec].mp3",
+      "genre": "Progressive House",
+      "category": "Ponchadas",
+      "bpm": 124,
+      "destination": "Progressive House\\Ponchadas\\124-127 BPM\\Mattim - Bare Circuit (Original Mix) [District Rec].mp3"
+    },
+    {
+      "source": "E:\\Progressive House\\Julio 26\\Mono Mono - Oxygen  [M99].mp3",
+      "name": "Mono Mono - Oxygen  [M99].mp3",
+      "genre": "Progressive House",
+      "category": "Ponchadas",
+      "bpm": 124,
+      "destination": "Progressive House\\Ponchadas\\124-127 BPM\\Mono Mono - Oxygen  [M99].mp3"
+    },
+    {
+      "source": "E:\\Progressive House\\Julio 26\\Orsay, LUCH - Between Us (Extended Mix Original Mix) [Gozar Records].mp3",
+      "name": "Orsay, LUCH - Between Us (Extended Mix Original Mix) [Gozar Records].mp3",
+      "genre": "House",
+      "category": "Medio",
+      "bpm": 124,
+      "destination": "House\\Medio\\124-127 BPM\\Orsay, LUCH - Between Us (Extended Mix Original Mix) [Gozar Records].mp3"
+    },
+    {
+      "source": "E:\\Progressive House\\Julio 26\\Paul Us Dj - Radiant Lane (Original Mix) [Deepsessions Recordings].mp3",
+      "name": "Paul Us Dj - Radiant Lane (Original Mix) [Deepsessions Recordings].mp3",
+      "genre": "Progressive House",
+      "category": "Inicio",
+      "bpm": 126,
+      "destination": "Progressive House\\Inicio\\124-127 BPM\\Paul Us Dj - Radiant Lane (Original Mix) [Deepsessions Recordings].mp3"
+    },
+    {
+      "source": "E:\\Progressive House\\Julio 26\\Sam Deanz - Ascension (Original Mix) [Spring Tube Limited].mp3",
+      "name": "Sam Deanz - Ascension (Original Mix) [Spring Tube Limited].mp3",
+      "genre": "Progressive House",
+      "category": "Inicio",
+      "bpm": 123,
+      "destination": "Progressive House\\Inicio\\120-123 BPM\\Sam Deanz - Ascension (Original Mix) [Spring Tube Limited].mp3"
+    },
+    {
+      "source": "E:\\Progressive House\\(Progressive Melodic House) Vicissu - Armored (Original Mix).mp3",
+      "name": "(Progressive Melodic House) Vicissu - Armored (Original Mix).mp3",
+      "genre": "Progressive House",
+      "category": "Inicio",
+      "bpm": 124,
+      "destination": "Progressive House\\Inicio\\124-127 BPM\\(Progressive Melodic House) Vicissu - Armored (Original Mix).mp3"
+    },
+    {
+      "source": "E:\\Progressive House\\Julio 2025\\(Progressive Melodic House) Vicissu - Armored (Original Mix).mp3",
+      "name": "(Progressive Melodic House) Vicissu - Armored (Original Mix).mp3",
+      "genre": "Progressive House",
+      "category": "Inicio",
+      "bpm": 130,
+      "destination": "Progressive House\\Inicio\\128-131 BPM\\(Progressive Melodic House) Vicissu - Armored (Original Mix).mp3"
+    },
+    {
+      "source": "E:\\Progressive House\\0072. James Holden feat. Julie Thompson - Nothing (93 Returning Mix).mp3",
+      "name": "0072. James Holden feat. Julie Thompson - Nothing (93 Returning Mix).mp3",
+      "genre": "Progressive House",
+      "category": "Medio",
+      "bpm": 129,
+      "destination": "Progressive House\\Medio\\128-131 BPM\\0072. James Holden feat. Julie Thompson - Nothing (93 Returning Mix).mp3"
+    },
+    {
+      "source": "E:\\Progressive House\\01 David Broaders - Horizons (DJ Version).mp3",
+      "name": "01 David Broaders - Horizons (DJ Version).mp3",
+      "genre": "Trance",
+      "category": "Inicio",
+      "bpm": 126,
+      "destination": "Trance\\Inicio\\124-127 BPM\\01 David Broaders - Horizons (DJ Version).mp3"
+    },
+    {
+      "source": "E:\\Progressive House\\01-ekis_ekis_and_nico_bujedo-sunset_in_yak.mp3",
+      "name": "01-ekis_ekis_and_nico_bujedo-sunset_in_yak.mp3",
+      "genre": "Progressive House",
+      "category": "Inicio",
+      "bpm": 120,
+      "destination": "Progressive House\\Inicio\\120-123 BPM\\01-ekis_ekis_and_nico_bujedo-sunset_in_yak.mp3"
+    },
+    {
+      "source": "E:\\Progressive House\\01. Benja Molina - Mauna Loa Extended Mix-www.groovytunes.org.mp3",
+      "name": "01. Benja Molina - Mauna Loa Extended Mix-www.groovytunes.org.mp3",
+      "genre": "Progressive House",
+      "category": "Inicio",
+      "bpm": 122,
+      "destination": "Progressive House\\Inicio\\120-123 BPM\\01. Benja Molina - Mauna Loa Extended Mix-www.groovytunes.org.mp3"
+    },
+    {
+      "source": "E:\\Progressive House\\01. Cendryma - Fracture Extended Mix-www.groovytunes.org.mp3",
+      "name": "01. Cendryma - Fracture Extended Mix-www.groovytunes.org.mp3",
+      "genre": "Progressive House",
+      "category": "Inicio",
+      "bpm": 120,
+      "destination": "Progressive House\\Inicio\\120-123 BPM\\01. Cendryma - Fracture Extended Mix-www.groovytunes.org.mp3"
+    },
+    {
+      "source": "E:\\Progressive House\\01. Tinlicker - Never Let Me Go (Extended Mix).flac",
+      "name": "01. Tinlicker - Never Let Me Go (Extended Mix).flac",
+      "genre": "Progressive House",
+      "category": "Medio",
+      "bpm": 123,
+      "destination": "Progressive House\\Medio\\120-123 BPM\\01. Tinlicker - Never Let Me Go (Extended Mix).flac"
+    },
+    {
+      "source": "E:\\Progressive House\\Julio 2025\\02 - Mortal - Autobahnana.mp3",
+      "name": "02 - Mortal - Autobahnana.mp3",
+      "genre": "House",
+      "category": "Ponchadas",
+      "bpm": 140,
+      "destination": "House\\Ponchadas\\140-143 BPM\\02 - Mortal - Autobahnana.mp3"
+    },
+    {
+      "source": "E:\\Progressive House\\26\\02-andrew_bayer_and_matt_lange_feat._kerry_l(2).mp3",
+      "name": "02-andrew_bayer_and_matt_lange_feat._kerry_l(2).mp3",
+      "genre": "Progressive House",
+      "category": "Inicio",
+      "bpm": 129,
+      "destination": "Progressive House\\Inicio\\128-131 BPM\\02-andrew_bayer_and_matt_lange_feat._kerry_l(2).mp3"
+    },
+    {
+      "source": "E:\\Progressive House\\Octubre 25\\120 - 123\\(Progressive Melodic House) Vicissu - Armored (Original Mix).mp3",
+      "name": "(Progressive Melodic House) Vicissu - Armored (Original Mix).mp3",
+      "genre": "Progressive House",
+      "category": "Inicio",
+      "bpm": 122,
+      "destination": "Progressive House\\Inicio\\120-123 BPM\\(Progressive Melodic House) Vicissu - Armored (Original Mix).mp3"
+    },
+    {
+      "source": "E:\\Progressive House\\02-faith_mark_-_lost_memories_(extended_mix).mp3",
+      "name": "02-faith_mark_-_lost_memories_(extended_mix).mp3",
+      "genre": "Trance",
+      "category": "Medio",
+      "bpm": 140,
+      "destination": "Trance\\Medio\\140-143 BPM\\02-faith_mark_-_lost_memories_(extended_mix).mp3"
+    },
+    {
+      "source": "E:\\Progressive House\\02-pammin-spheres_(extended_mix).mp3",
+      "name": "02-pammin-spheres_(extended_mix).mp3",
+      "genre": "Progressive House",
+      "category": "Inicio",
+      "bpm": 126,
+      "destination": "Progressive House\\Inicio\\124-127 BPM\\02-pammin-spheres_(extended_mix).mp3"
+    },
+    {
+      "source": "E:\\Progressive House\\02-paul_boyle_-_jin_sil_(extended_mix).mp3",
+      "name": "02-paul_boyle_-_jin_sil_(extended_mix).mp3",
+      "genre": "Trance",
+      "category": "Ponchadas",
+      "bpm": 140,
+      "destination": "Trance\\Ponchadas\\140-143 BPM\\02-paul_boyle_-_jin_sil_(extended_mix).mp3"
+    },
+    {
+      "source": "E:\\Progressive House\\02-poinoir_-_poison_love_(extended_mix).mp3",
+      "name": "02-poinoir_-_poison_love_(extended_mix).mp3",
+      "genre": "Trance",
+      "category": "Medio",
+      "bpm": 140,
+      "destination": "Trance\\Medio\\140-143 BPM\\02-poinoir_-_poison_love_(extended_mix).mp3"
+    },
+    {
+      "source": "E:\\Progressive House\\02-qualysto-echoes_(extended_mix).mp3",
+      "name": "02-qualysto-echoes_(extended_mix).mp3",
+      "genre": "Progressive House",
+      "category": "Medio",
+      "bpm": 120,
+      "destination": "Progressive House\\Medio\\120-123 BPM\\02-qualysto-echoes_(extended_mix).mp3"
+    },
+    {
+      "source": "E:\\Progressive House\\02-stendahl-just_be_(extended_mix).mp3",
+      "name": "02-stendahl-just_be_(extended_mix).mp3",
+      "genre": "Progressive House",
+      "category": "Medio",
+      "bpm": 123,
+      "destination": "Progressive House\\Medio\\120-123 BPM\\02-stendahl-just_be_(extended_mix).mp3"
+    },
+    {
+      "source": "E:\\Progressive House\\02-terry_golden_-_space_(alexander_popov_extended_remix).mp3",
+      "name": "02-terry_golden_-_space_(alexander_popov_extended_remix).mp3",
+      "genre": "Trance",
+      "category": "Inicio",
+      "bpm": 129,
+      "destination": "Trance\\Inicio\\128-131 BPM\\02-terry_golden_-_space_(alexander_popov_extended_remix).mp3"
+    },
+    {
+      "source": "E:\\Progressive House\\02. Cendryma - Evasive Extended Mix-www.groovytunes.org.mp3",
+      "name": "02. Cendryma - Evasive Extended Mix-www.groovytunes.org.mp3",
+      "genre": "Trance",
+      "category": "Inicio",
+      "bpm": 120,
+      "destination": "Trance\\Inicio\\120-123 BPM\\02. Cendryma - Evasive Extended Mix-www.groovytunes.org.mp3"
+    },
+    {
+      "source": "E:\\Progressive House\\Octubre 25\\03-above_and_beyond_with_proff-palermo_(extended_mix).mp3",
+      "name": "03-above_and_beyond_with_proff-palermo_(extended_mix).mp3",
+      "genre": "Progressive House",
+      "category": "Medio",
+      "bpm": 126,
+      "destination": "Progressive House\\Medio\\124-127 BPM\\03-above_and_beyond_with_proff-palermo_(extended_mix).mp3"
+    },
+    {
+      "source": "E:\\Progressive House\\Progressive House\\03-michael_anthony_-_connections_(extended_mix).mp3",
+      "name": "03-michael_anthony_-_connections_(extended_mix).mp3",
+      "genre": "Progressive House",
+      "category": "Ponchadas",
+      "bpm": 123,
+      "destination": "Progressive House\\Ponchadas\\120-123 BPM\\03-michael_anthony_-_connections_(extended_mix).mp3"
+    },
+    {
+      "source": "E:\\Progressive House\\03. Naju - Studio 1 Original Mix-www.groovytunes.org.mp3",
+      "name": "03. Naju - Studio 1 Original Mix-www.groovytunes.org.mp3",
+      "genre": "House",
+      "category": "Medio",
+      "bpm": 129,
+      "destination": "House\\Medio\\128-131 BPM\\03. Naju - Studio 1 Original Mix-www.groovytunes.org.mp3"
+    },
+    {
+      "source": "E:\\Progressive House\\04-yaars-scarab_(extended_mix).mp3",
+      "name": "04-yaars-scarab_(extended_mix).mp3",
+      "genre": "Progressive House",
+      "category": "Medio",
+      "bpm": 126,
+      "destination": "Progressive House\\Medio\\124-127 BPM\\04-yaars-scarab_(extended_mix).mp3"
+    },
+    {
+      "source": "E:\\Progressive House\\Julio 2025\\06. Pako - Steel Blue.mp3",
+      "name": "06. Pako - Steel Blue.mp3",
+      "genre": "House",
+      "category": "Ponchadas",
+      "bpm": 140,
+      "destination": "House\\Ponchadas\\140-143 BPM\\06. Pako - Steel Blue.mp3"
+    },
+    {
+      "source": "E:\\Progressive House\\Octubre 25\\14 - Give Me Some Time (Extended Mix).flac",
+      "name": "14 - Give Me Some Time (Extended Mix).flac",
+      "genre": "Progressive House",
+      "category": "Inicio",
+      "bpm": 0,
+      "destination": "Progressive House\\Inicio\\No BPM\\14 - Give Me Some Time (Extended Mix).flac"
+    },
+    {
+      "source": "E:\\Progressive House\\14. P.O.S. - Thunder & Sunshine (Extended Mix).mp3",
+      "name": "14. P.O.S. - Thunder & Sunshine (Extended Mix).mp3",
+      "genre": "Progressive House",
+      "category": "Inicio",
+      "bpm": 124,
+      "destination": "Progressive House\\Inicio\\124-127 BPM\\14. P.O.S. - Thunder & Sunshine (Extended Mix).mp3"
+    },
+    {
+      "source": "E:\\Progressive House\\26\\16BL - Can't Stop Now (Extended Mix) [Anjunadeep].mp3",
+      "name": "16BL - Can't Stop Now (Extended Mix) [Anjunadeep].mp3",
+      "genre": "Melodic House",
+      "category": "Inicio",
+      "bpm": 122,
+      "destination": "Melodic House\\Inicio\\120-123 BPM\\16BL - Can't Stop Now (Extended Mix) [Anjunadeep].mp3"
+    },
+    {
+      "source": "E:\\Progressive House\\Julio 2025\\84 Avenue - Pigalle by Night (Extended Mix) [Hollystone Records].mp3",
+      "name": "84 Avenue - Pigalle by Night (Extended Mix) [Hollystone Records].mp3",
+      "genre": "Progressive House",
+      "category": "Inicio",
+      "bpm": 120,
+      "destination": "Progressive House\\Inicio\\120-123 BPM\\84 Avenue - Pigalle by Night (Extended Mix) [Hollystone Records].mp3"
+    },
+    {
+      "source": "E:\\Progressive House\\Octubre 25\\8A - 128 - Xplore - Time Travel (Original Mix) (9).mp3",
+      "name": "8A - 128 - Xplore - Time Travel (Original Mix) (9).mp3",
+      "genre": "Progressive House",
+      "category": "Inicio",
+      "bpm": 129,
+      "destination": "Progressive House\\Inicio\\128-131 BPM\\8A - 128 - Xplore - Time Travel (Original Mix) (9).mp3"
+    },
+    {
+      "source": "E:\\Progressive House\\A-mase - Awakening 2.0.mp3",
+      "name": "A-mase - Awakening 2.0.mp3",
+      "genre": "Trance",
+      "category": "Medio",
+      "bpm": 126,
+      "destination": "Trance\\Medio\\124-127 BPM\\A-mase - Awakening 2.0.mp3"
+    },
+    {
+      "source": "E:\\Progressive House\\26\\Abity, Lelio Monte, Luke Costa - Imperium (Original Mix) [Mango Alley].mp3",
+      "name": "Abity, Lelio Monte, Luke Costa - Imperium (Original Mix) [Mango Alley].mp3",
+      "genre": "Melodic House",
+      "category": "Inicio",
+      "bpm": 122,
+      "destination": "Melodic House\\Inicio\\120-123 BPM\\Abity, Lelio Monte, Luke Costa - Imperium (Original Mix) [Mango Alley].mp3"
+    },
+    {
+      "source": "E:\\Progressive House\\Above & Beyond - Prelude (M.O.S. Remix).mp3",
+      "name": "Above & Beyond - Prelude (M.O.S. Remix).mp3",
+      "genre": "Melodic House",
+      "category": "Inicio",
+      "bpm": 122,
+      "destination": "Melodic House\\Inicio\\120-123 BPM\\Above & Beyond - Prelude (M.O.S. Remix).mp3"
+    },
+    {
+      "source": "E:\\Progressive House\\26\\Above & Beyond - Sun In Your Eyes (Marsh Extended Mix) [Anjunabeats].mp3",
+      "name": "Above & Beyond - Sun In Your Eyes (Marsh Extended Mix) [Anjunabeats].mp3",
+      "genre": "Progressive House",
+      "category": "Inicio",
+      "bpm": 126,
+      "destination": "Progressive House\\Inicio\\124-127 BPM\\Above & Beyond - Sun In Your Eyes (Marsh Extended Mix) [Anjunabeats].mp3"
+    },
+    {
+      "source": "E:\\Progressive House\\26\\Adrian Andrea - Way Too Long (Original mix) [Dis-Function].mp3",
+      "name": "Adrian Andrea - Way Too Long (Original mix) [Dis-Function].mp3",
+      "genre": "Melodic Techno",
+      "category": "Inicio",
+      "bpm": 122,
+      "destination": "Melodic Techno\\Inicio\\120-123 BPM\\Adrian Andrea - Way Too Long (Original mix) [Dis-Function].mp3"
+    },
+    {
+      "source": "E:\\Progressive House\\Adrian Lux - Teenage Crime (Axwell & Henrik B Remode).mp3",
+      "name": "Adrian Lux - Teenage Crime (Axwell & Henrik B Remode).mp3",
+      "genre": "EDM",
+      "category": "Medio",
+      "bpm": 128,
+      "destination": "EDM\\Medio\\128-131 BPM\\Adrian Lux - Teenage Crime (Axwell & Henrik B Remode).mp3"
+    },
+    {
+      "source": "E:\\Progressive House\\26\\Advansy - Under the Moon (Extended Mix) [Techno Groove].mp3",
+      "name": "Advansy - Under the Moon (Extended Mix) [Techno Groove].mp3",
+      "genre": "Progressive House",
+      "category": "Ponchadas",
+      "bpm": 125,
+      "destination": "Progressive House\\Ponchadas\\124-127 BPM\\Advansy - Under the Moon (Extended Mix) [Techno Groove].mp3"
+    },
+    {
+      "source": "E:\\Progressive House\\Aeolu5 - Tapestry (Extended Mix).mp3",
+      "name": "Aeolu5 - Tapestry (Extended Mix).mp3",
+      "genre": "Progressive House",
+      "category": "Inicio",
+      "bpm": 120,
+      "destination": "Progressive House\\Inicio\\120-123 BPM\\Aeolu5 - Tapestry (Extended Mix).mp3"
+    },
+    {
+      "source": "E:\\Progressive House\\26\\Agustin Petros - No Return (Original Mix) [Wander Nation Records].mp3",
+      "name": "Agustin Petros - No Return (Original Mix) [Wander Nation Records].mp3",
+      "genre": "Progressive House",
+      "category": "Medio",
+      "bpm": 123,
+      "destination": "Progressive House\\Medio\\120-123 BPM\\Agustin Petros - No Return (Original Mix) [Wander Nation Records].mp3"
+    },
+    {
+      "source": "E:\\Progressive House\\Progressive House\\Agustin Pietrocola - Sizer (Original Mix) [UV Noir].mp3",
+      "name": "Agustin Pietrocola - Sizer (Original Mix) [UV Noir].mp3",
+      "genre": "Progressive House",
+      "category": "Medio",
+      "bpm": 123,
+      "destination": "Progressive House\\Medio\\120-123 BPM\\Agustin Pietrocola - Sizer (Original Mix) [UV Noir].mp3"
+    },
+    {
+      "source": "E:\\Progressive House\\Akkam - Black Horizon.mp3",
+      "name": "Akkam - Black Horizon.mp3",
+      "genre": "Progressive House",
+      "category": "Inicio",
+      "bpm": 123,
+      "destination": "Progressive House\\Inicio\\120-123 BPM\\Akkam - Black Horizon.mp3"
+    },
+    {
+      "source": "E:\\Progressive House\\Julio 2025\\Alex Breitling, Jyll - Light Year (Extended Mix) [Colorize (Enhanced)].mp3",
+      "name": "Alex Breitling, Jyll - Light Year (Extended Mix) [Colorize (Enhanced)].mp3",
+      "genre": "Progressive House",
+      "category": "Inicio",
+      "bpm": 122,
+      "destination": "Progressive House\\Inicio\\120-123 BPM\\Alex Breitling, Jyll - Light Year (Extended Mix) [Colorize (Enhanced)].mp3"
+    },
+    {
+      "source": "E:\\Progressive House\\Alex O'Rion - Spektre (Original Mix) [Solis Records].mp3",
+      "name": "Alex O'Rion - Spektre (Original Mix) [Solis Records].mp3",
+      "genre": "Progressive House",
+      "category": "Medio",
+      "bpm": 121,
+      "destination": "Progressive House\\Medio\\120-123 BPM\\Alex O'Rion - Spektre (Original Mix) [Solis Records].mp3"
+    },
+    {
+      "source": "E:\\Progressive House\\Alex Wright - Palau (Extended Mix).mp3",
+      "name": "Alex Wright - Palau (Extended Mix).mp3",
+      "genre": "Progressive House",
+      "category": "Ponchadas",
+      "bpm": 129,
+      "destination": "Progressive House\\Ponchadas\\128-131 BPM\\Alex Wright - Palau (Extended Mix).mp3"
+    },
+    {
+      "source": "E:\\Progressive House\\Julio 2025\\Alexander Silakov - Eva (Sistersweet Remix) [CONCATENATE].mp3",
+      "name": "Alexander Silakov - Eva (Sistersweet Remix) [CONCATENATE].mp3",
+      "genre": "Progressive House",
+      "category": "Inicio",
+      "bpm": 122,
+      "destination": "Progressive House\\Inicio\\120-123 BPM\\Alexander Silakov - Eva (Sistersweet Remix) [CONCATENATE].mp3"
+    },
+    {
+      "source": "E:\\Progressive House\\26\\Alexey Sonar, ANUQRAM - Time (Extended Mix) [Anjunabeats].mp3",
+      "name": "Alexey Sonar, ANUQRAM - Time (Extended Mix) [Anjunabeats].mp3",
+      "genre": "Progressive House",
+      "category": "Medio",
+      "bpm": 126,
+      "destination": "Progressive House\\Medio\\124-127 BPM\\Alexey Sonar, ANUQRAM - Time (Extended Mix) [Anjunabeats].mp3"
+    },
+    {
+      "source": "E:\\Progressive House\\Progressive House\\Alexey Sonar, Ramon Daler - All We Need (Extended Mix) [SkyTop].mp3",
+      "name": "Alexey Sonar, Ramon Daler - All We Need (Extended Mix) [SkyTop].mp3",
+      "genre": "Progressive House",
+      "category": "Inicio",
+      "bpm": 124,
+      "destination": "Progressive House\\Inicio\\124-127 BPM\\Alexey Sonar, Ramon Daler - All We Need (Extended Mix) [SkyTop].mp3"
+    },
+    {
+      "source": "E:\\Progressive House\\Octubre 25\\120 - 123\\Amber Long, Twilight Music Sculpture - Find Me (Messier Remix) [Modern Agenda].mp3",
+      "name": "Amber Long, Twilight Music Sculpture - Find Me (Messier Remix) [Modern Agenda].mp3",
+      "genre": "Progressive House",
+      "category": "Inicio",
+      "bpm": 124,
+      "destination": "Progressive House\\Inicio\\124-127 BPM\\Amber Long, Twilight Music Sculpture - Find Me (Messier Remix) [Modern Agenda].mp3"
+    },
+    {
+      "source": "E:\\Progressive House\\Julio 2025\\Andy Moor, Above & Beyond - Air For Life (Dosem Extended Mix) [Anjunabeats].mp3",
+      "name": "Andy Moor, Above & Beyond - Air For Life (Dosem Extended Mix) [Anjunabeats].mp3",
+      "genre": "Progressive House",
+      "category": "Inicio",
+      "bpm": 124,
+      "destination": "Progressive House\\Inicio\\124-127 BPM\\Andy Moor, Above & Beyond - Air For Life (Dosem Extended Mix) [Anjunabeats].mp3"
+    },
+    {
+      "source": "E:\\Progressive House\\Anjunadeep 15-01-005-MOTSA, Jody Wisternoff & James Grant-Feel This Way (Mixed).mp3",
+      "name": "Anjunadeep 15-01-005-MOTSA, Jody Wisternoff & James Grant-Feel This Way (Mixed).mp3",
+      "genre": "Trance",
+      "category": "Inicio",
+      "bpm": 99,
+      "destination": "Trance\\Inicio\\96-99 BPM\\Anjunadeep 15-01-005-MOTSA, Jody Wisternoff & James Grant-Feel This Way (Mixed).mp3"
+    },
+    {
+      "source": "E:\\Progressive House\\26\\Antranig - Deep Inside (Original Mix) [AKAZI Records].mp3",
+      "name": "Antranig - Deep Inside (Original Mix) [AKAZI Records].mp3",
+      "genre": "Melodic Techno",
+      "category": "Medio",
+      "bpm": 126,
+      "destination": "Melodic Techno\\Medio\\124-127 BPM\\Antranig - Deep Inside (Original Mix) [AKAZI Records].mp3"
+    },
+    {
+      "source": "E:\\Progressive House\\26\\Antranig - Do You Feel Me (Original Mix) [AKAZI Records].mp3",
+      "name": "Antranig - Do You Feel Me (Original Mix) [AKAZI Records].mp3",
+      "genre": "Indie Dance",
+      "category": "Medio",
+      "bpm": 125,
+      "destination": "Indie Dance\\Medio\\124-127 BPM\\Antranig - Do You Feel Me (Original Mix) [AKAZI Records].mp3"
+    },
+    {
+      "source": "E:\\Progressive House\\26\\Antrim - You Smile at Me (Original Mix) [Or Two Strangers].mp3",
+      "name": "Antrim - You Smile at Me (Original Mix) [Or Two Strangers].mp3",
+      "genre": "Progressive House",
+      "category": "Ponchadas",
+      "bpm": 124,
+      "destination": "Progressive House\\Ponchadas\\124-127 BPM\\Antrim - You Smile at Me (Original Mix) [Or Two Strangers].mp3"
+    },
+    {
+      "source": "E:\\Progressive House\\ANUQRAM - Alright Now (Extended Mix) [Anjunabeats].mp3",
+      "name": "ANUQRAM - Alright Now (Extended Mix) [Anjunabeats].mp3",
+      "genre": "Progressive House",
+      "category": "Ponchadas",
+      "bpm": 124,
+      "destination": "Progressive House\\Ponchadas\\124-127 BPM\\ANUQRAM - Alright Now (Extended Mix) [Anjunabeats].mp3"
+    },
+    {
+      "source": "E:\\Progressive House\\ANUQRAM - Don't Stop (Extended Mix) [Anjunabeats].mp3",
+      "name": "ANUQRAM - Don't Stop (Extended Mix) [Anjunabeats].mp3",
+      "genre": "Progressive House",
+      "category": "Ponchadas",
+      "bpm": 124,
+      "destination": "Progressive House\\Ponchadas\\124-127 BPM\\ANUQRAM - Don't Stop (Extended Mix) [Anjunabeats].mp3"
+    },
+    {
+      "source": "E:\\Progressive House\\ANUQRAM - Safari (Extended Mix) [Anjunabeats].mp3",
+      "name": "ANUQRAM - Safari (Extended Mix) [Anjunabeats].mp3",
+      "genre": "Progressive House",
+      "category": "Ponchadas",
+      "bpm": 124,
+      "destination": "Progressive House\\Ponchadas\\124-127 BPM\\ANUQRAM - Safari (Extended Mix) [Anjunabeats].mp3"
+    },
+    {
+      "source": "E:\\Progressive House\\ANUQRAM - This Beat (Extended Mix).mp3",
+      "name": "ANUQRAM - This Beat (Extended Mix).mp3",
+      "genre": "House",
+      "category": "Ponchadas",
+      "bpm": 123,
+      "destination": "House\\Ponchadas\\120-123 BPM\\ANUQRAM - This Beat (Extended Mix).mp3"
+    },
+    {
+      "source": "E:\\Progressive House\\26\\Aphra - Prometheus (Original Mix) [M99].mp3",
+      "name": "Aphra - Prometheus (Original Mix) [M99].mp3",
+      "genre": "Progressive House",
+      "category": "Ponchadas",
+      "bpm": 127,
+      "destination": "Progressive House\\Ponchadas\\124-127 BPM\\Aphra - Prometheus (Original Mix) [M99].mp3"
+    },
+    {
+      "source": "E:\\Progressive House\\26\\Aphra - Morpheus (Original Mix) [M99].mp3",
+      "name": "Aphra - Morpheus (Original Mix) [M99].mp3",
+      "genre": "Progressive House",
+      "category": "Ponchadas",
+      "bpm": 126,
+      "destination": "Progressive House\\Ponchadas\\124-127 BPM\\Aphra - Morpheus (Original Mix) [M99].mp3"
+    },
+    {
+      "source": "E:\\Progressive House\\26\\Apostrof - Orchestra Melodia (Club Remix) [otherworld].mp3",
+      "name": "Apostrof - Orchestra Melodia (Club Remix) [otherworld].mp3",
+      "genre": "Progressive House",
+      "category": "Ponchadas",
+      "bpm": 126,
+      "destination": "Progressive House\\Ponchadas\\124-127 BPM\\Apostrof - Orchestra Melodia (Club Remix) [otherworld].mp3"
+    },
+    {
+      "source": "E:\\Progressive House\\Progressive House\\Approaching Black - Amber Glow (Original Mix) [Monstercat].mp3",
+      "name": "Approaching Black - Amber Glow (Original Mix) [Monstercat].mp3",
+      "genre": "Progressive House",
+      "category": "Inicio",
+      "bpm": 120,
+      "destination": "Progressive House\\Inicio\\120-123 BPM\\Approaching Black - Amber Glow (Original Mix) [Monstercat].mp3"
+    },
+    {
+      "source": "E:\\Progressive House\\Octubre 25\\Attican - Duplicity (Original Mix) [Freegrant Music].mp3",
+      "name": "Attican - Duplicity (Original Mix) [Freegrant Music].mp3",
+      "genre": "Progressive House",
+      "category": "Medio",
+      "bpm": 126,
+      "destination": "Progressive House\\Medio\\124-127 BPM\\Attican - Duplicity (Original Mix) [Freegrant Music].mp3"
+    },
+    {
+      "source": "E:\\Progressive House\\Audiotox & EANP - Mechanism (Hernan Cattaneo, Soundexile Remix).mp3",
+      "name": "Audiotox & EANP - Mechanism (Hernan Cattaneo, Soundexile Remix).mp3",
+      "genre": "Progressive House",
+      "category": "Inicio",
+      "bpm": 123,
+      "destination": "Progressive House\\Inicio\\120-123 BPM\\Audiotox & EANP - Mechanism (Hernan Cattaneo, Soundexile Remix).mp3"
+    },
+    {
+      "source": "E:\\Progressive House\\Progressive House\\Avantime - Horizon (Original Mix) [Luscious Vibrations].mp3",
+      "name": "Avantime - Horizon (Original Mix) [Luscious Vibrations].mp3",
+      "genre": "Progressive House",
+      "category": "Ponchadas",
+      "bpm": 125,
+      "destination": "Progressive House\\Ponchadas\\124-127 BPM\\Avantime - Horizon (Original Mix) [Luscious Vibrations].mp3"
+    },
+    {
+      "source": "E:\\Progressive House\\Axis - When The Night Falls (Extended Mix).mp3",
+      "name": "Axis - When The Night Falls (Extended Mix).mp3",
+      "genre": "Progressive House",
+      "category": "Medio",
+      "bpm": 123,
+      "destination": "Progressive House\\Medio\\120-123 BPM\\Axis - When The Night Falls (Extended Mix).mp3"
+    },
+    {
+      "source": "E:\\Progressive House\\Progressive House\\AY.ATA - Something About You (Extended Mix) [Sekora].mp3",
+      "name": "AY.ATA - Something About You (Extended Mix) [Sekora].mp3",
+      "genre": "Progressive House",
+      "category": "Inicio",
+      "bpm": 123,
+      "destination": "Progressive House\\Inicio\\120-123 BPM\\AY.ATA - Something About You (Extended Mix) [Sekora].mp3"
+    }
+  ],
+  "omitidas": [
+    "E:\\Progressive House\\Octubre 25\\04-paul_arcane_and_fromtheearth-helix_(extended_mix)-proper.mp3",
+    "E:\\Progressive House\\26\\Apostrof - Orchestra Melodia (Extended Mix) [otherworld].mp3"
+  ]
+}

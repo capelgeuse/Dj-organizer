@@ -1,0 +1,4 @@
+pygame>=2.5.0
+librosa>=0.11.0
+mutagen>=1.47.0
+PySide6>=6.8.0

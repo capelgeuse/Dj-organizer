@@ -1,0 +1,31 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+env/
+.env
+.env.*
+!.env.example
+
+# Artefactos locales de PyInstaller (la distribución se comparte por Drive)
+Capelhouse/build/
+Capelhouse/dist/
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+
+# Tauri / Rust
+frontend/src-tauri/target/
+frontend/src-tauri/Cargo.lock
+frontend/src-tauri/resources/backend_bridge.exe
+frontend/src-tauri/pyinstaller-build/
+backend_bridge.spec
+
+# Local editor and OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
