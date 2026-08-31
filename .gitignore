@@ -24,6 +24,7 @@ frontend/src-tauri/resources/backend_bridge.exe
 frontend/src-tauri/pyinstaller-build/
 backend_bridge.spec
 dist/
+build/
 frontend/src-tauri/binaries/
 
 # Local editor and OS files
