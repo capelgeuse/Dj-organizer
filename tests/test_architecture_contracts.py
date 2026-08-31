@@ -53,7 +53,7 @@ class ArchitectureContractTests(unittest.TestCase):
         route = RoutePreset("route-1", "House / Inicio", "House/Inicio")
 
         self.assertEqual(summary.to_dict()["sort"], {"field": "bpm", "direction": "asc"})
-        self.assertEqual(summary.to_dict()["tracks"][0]["track_id"], "track-1")
+        self.assertEqual(summary.to_dict()["tracks"][0]["trackId"], "track-1")
         self.assertEqual(route.to_dict()["routeId"], "route-1")
 
     def test_move_and_progress_contracts_preserve_terminal_state(self):

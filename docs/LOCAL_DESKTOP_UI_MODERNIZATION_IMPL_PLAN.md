@@ -3,7 +3,7 @@
 - [x] P0 — Auditar la arquitectura actual y congelar ownership del dominio
 - [x] P1 — Establecer el workspace React + Vite
 - [ ] P2 — Establecer el shell de escritorio Tauri
-- [ ] P3 — Establecer el bridge Python ↔ desktop
+- [x] P3 — Establecer el bridge Python ↔ desktop
 - [ ] P4 — Probar una consulta backend real end-to-end
 - [ ] P5 — Probar una mutación backend real end-to-end
 - [ ] P6 — Construir shell y navegación de la aplicación

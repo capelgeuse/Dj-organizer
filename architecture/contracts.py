@@ -71,7 +71,18 @@ class TrackRecord:
     artwork_uri: str | None = None
 
     def to_dict(self) -> dict[str, Any]:
-        return asdict(self)
+        return {
+            "trackId": self.track_id,
+            "sourcePath": self.source_path,
+            "relativePath": self.relative_path,
+            "name": self.name,
+            "title": self.title,
+            "artist": self.artist,
+            "bpm": self.bpm,
+            "genre": self.genre,
+            "durationSeconds": self.duration_seconds,
+            "artworkUri": self.artwork_uri,
+        }
 
 
 @dataclass(frozen=True)
