@@ -6,6 +6,10 @@ export type DesktopShortcutIntent =
 
 type KeyboardLike = Pick<KeyboardEvent, 'altKey' | 'code' | 'ctrlKey' | 'metaKey' | 'repeat'>
 
+export function isDesktopShortcutCode(code: string): boolean {
+  return /^(Key[WASD]|Numpad[0-9])$/.test(code)
+}
+
 export function resolveDesktopShortcut(event: KeyboardLike): DesktopShortcutIntent | null {
   if (event.altKey || event.ctrlKey || event.metaKey) return null
 

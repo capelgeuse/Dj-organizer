@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { resolveDesktopShortcut } from './keyboard-shortcuts'
+import { isDesktopShortcutCode, resolveDesktopShortcut } from './keyboard-shortcuts'
 
 function isTextEntryTarget(target: EventTarget | null): boolean {
   const element = target instanceof HTMLElement ? target : null
@@ -23,19 +23,29 @@ export function DesktopKeyboardController() {
 
   useEffect(() => {
     function handleKeyboard(event: KeyboardEvent) {
-      if (event.defaultPrevented || event.isComposing || isTextEntryTarget(event.target) || document.querySelector('[aria-modal="true"]')) return
+      if (!isDesktopShortcutCode(event.code)) return
+      if (isTextEntryTarget(event.target)) return
+
+      // Keep the legacy bubble listener from firing behind modals, during IME input,
+      // or for OS/application shortcuts such as Ctrl+W. Default browser behavior is
+      // preserved in these guarded cases.
+      if (event.isComposing || document.querySelector('[aria-modal="true"]') || event.altKey || event.ctrlKey || event.metaKey) {
+        event.stopImmediatePropagation()
+        return
+      }
 
       const intent = resolveDesktopShortcut(event)
-      if (!intent) return
-
       const shell = document.querySelector<HTMLElement>('.app-shell')
-      if (!shell) return
+      if (!intent || !shell) return
+
+      // This controller is the single runtime keyboard path. It drives the same
+      // visible controls as mouse input and suppresses the older bubble listener.
+      event.preventDefault()
+      event.stopImmediatePropagation()
 
       if (intent.type === 'select-track') {
         const rows = Array.from(document.querySelectorAll<HTMLElement>('.track-list .track-row'))
         if (!rows.length) return
-        event.preventDefault()
-        event.stopImmediatePropagation()
         const selectedPosition = rows.findIndex((row) => row.classList.contains('track-row-selected'))
         const nextPosition = selectedPosition === -1
           ? intent.delta > 0 ? 0 : rows.length - 1
@@ -52,22 +62,16 @@ export function DesktopKeyboardController() {
         const label = intent.seconds < 0 ? 'Rewind five seconds' : 'Fast forward five seconds'
         const button = document.querySelector<HTMLButtonElement>(`button[aria-label="${label}"]`)
         if (!button || button.disabled) return
-        event.preventDefault()
-        event.stopImmediatePropagation()
         button.click()
         announce(setAnnouncement, intent.seconds < 0 ? 'Rewound five seconds' : 'Forwarded five seconds')
         return
       }
 
       if (intent.type === 'current-crate') {
-        event.preventDefault()
-        event.stopImmediatePropagation()
         announce(setAnnouncement, 'Current Crate is a holding area and does not move files')
         return
       }
 
-      event.preventDefault()
-      event.stopImmediatePropagation()
       if (intent.repeated) return
 
       const routeButton = document.querySelector<HTMLButtonElement>(`.routing-slot[data-route-id="${intent.routeId}"]`)

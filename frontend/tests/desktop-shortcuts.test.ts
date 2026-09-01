@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { resolveDesktopShortcut } from '../src/keyboard-shortcuts.ts'
+import { isDesktopShortcutCode, resolveDesktopShortcut } from '../src/keyboard-shortcuts.ts'
 
 function key(code: string, repeat = false, modifiers: Partial<{ altKey: boolean; ctrlKey: boolean; metaKey: boolean }> = {}) {
   return {
@@ -27,7 +27,10 @@ test('physical numpad keys preserve route identity and expose repeat state', () 
   assert.equal(resolveDesktopShortcut(key('Digit7')), null)
 })
 
-test('modified shortcuts are left to the operating system and application chrome', () => {
+test('owned codes stay identifiable even when modifiers reserve them for the OS', () => {
+  assert.equal(isDesktopShortcutCode('KeyW'), true)
+  assert.equal(isDesktopShortcutCode('Numpad1'), true)
+  assert.equal(isDesktopShortcutCode('Digit1'), false)
   assert.equal(resolveDesktopShortcut(key('KeyW', false, { ctrlKey: true })), null)
   assert.equal(resolveDesktopShortcut(key('KeyD', false, { altKey: true })), null)
   assert.equal(resolveDesktopShortcut(key('Numpad1', false, { metaKey: true })), null)
