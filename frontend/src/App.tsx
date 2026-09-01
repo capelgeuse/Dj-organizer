@@ -35,6 +35,7 @@ function App() {
   const [playing, setPlaying] = useState(false)
   const [lastMove, setLastMove] = useState<MoveResult | null>(null)
   const [activeRouteId, setActiveRouteId] = useState<string | null>(null)
+  const [recentRouteId, setRecentRouteId] = useState<string | null>(null)
   const [blockedRouteId, setBlockedRouteId] = useState<string | null>(null)
   const [draggingTrackId, setDraggingTrackId] = useState<string | null>(null)
   const audioRef = useRef<HTMLAudioElement>(null)
@@ -59,14 +60,14 @@ function App() {
     return () => { mounted = false }
   }, [])
 
-  const refreshLibrary = useCallback(async (rootValue: string, sortValue: LibrarySummary['sort']) => {
+  const refreshLibrary = useCallback(async (rootValue: string, sortValue: LibrarySummary['sort'], preferredIndex = 0) => {
     const controller = new AbortController()
     scanAbortRef.current = controller
     setProgress({ completed: 0, total: 0 })
     try {
       const next = await scanLibrary(rootValue.trim() || undefined, sortValue, setProgress, controller.signal)
       setSummary(next)
-      setSelectedIndex(next.tracks.length ? 0 : -1)
+      setSelectedIndex(next.tracks.length ? Math.min(preferredIndex, next.tracks.length - 1) : -1)
       setPlaying(false)
       audioRef.current?.pause()
     } finally {
@@ -108,23 +109,29 @@ function App() {
     if (!trackId) return
     setLoading(true)
     setError(null)
+    setActiveRouteId(routeId)
+    audioRef.current?.pause()
+    setPlaying(false)
     try {
       const result = await moveTrack(trackId, routeId)
       if (result.status !== 'moved') {
+        setActiveRouteId(null)
         if (result.status === 'destination_exists') setBlockedRouteId(routeId)
         setError(result.error?.message ?? `Move failed: ${result.status}`)
         return
       }
       setBlockedRouteId(null)
-      setActiveRouteId(routeId)
+      setActiveRouteId(null)
+      setRecentRouteId(routeId)
       setLastMove(result)
-      await refreshLibrary('', sort)
+      await refreshLibrary('', sort, Math.max(0, selectedIndex))
     } catch (cause) {
+      setActiveRouteId(null)
       setError(cause instanceof Error ? cause.message : 'Could not move the selected track.')
     } finally {
       setLoading(false)
     }
-  }, [refreshLibrary, selectedTrack?.trackId, sort])
+  }, [refreshLibrary, selectedIndex, selectedTrack?.trackId, sort])
 
   async function handleUndo() {
     if (!lastMove) return
@@ -138,6 +145,7 @@ function App() {
       }
       setLastMove(null)
       setActiveRouteId(null)
+      setRecentRouteId(null)
       await refreshLibrary('', sort)
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Could not undo the last move.')
@@ -191,8 +199,14 @@ function App() {
         const audio = audioRef.current
         if (audio) audio.currentTime = Math.max(0, audio.currentTime + (event.code === 'KeyA' ? -5 : 5))
       } else {
+        if (event.code === 'Numpad0') {
+          event.preventDefault()
+          return
+        }
         const match = event.code.match(/^Numpad([1-9])$/)
-        if (match && !loading) {
+        const route = match ? routes.find((item) => item.routeId === match[1]) : null
+        const routeConfigured = route && route.label.trim() && route.relativeDestination.trim()
+        if (match && routeConfigured && blockedRouteId !== match[1] && !loading) {
           event.preventDefault()
           void handleMove(match[1])
         }
@@ -200,7 +214,7 @@ function App() {
     }
     window.addEventListener('keydown', handleKeyboard)
     return () => window.removeEventListener('keydown', handleKeyboard)
-  }, [bridgeStatus, handleMove, loading, selectTrack, selectedIndex, summary])
+  }, [blockedRouteId, bridgeStatus, handleMove, loading, routes, selectTrack, selectedIndex, summary])
 
   return (
     <AppShell bridgeStatus={bridgeStatus}>
@@ -259,7 +273,7 @@ function App() {
           <div className="control-row"><kbd>A</kbd><span>Rewind 5 seconds</span></div>
           <div className="control-row"><kbd>D</kbd><span>Fast-forward 5 seconds</span></div>
           <AudioControls track={selectedTrack} audioRef={audioRef} onPlay={() => setPlaying(true)} onPause={() => setPlaying(false)} onEnded={() => setPlaying(false)} />
-          <RoutingMatrix routes={routes} selectedTrackId={selectedTrack?.trackId ?? null} activeRouteId={activeRouteId} recentRouteId={lastMove ? activeRouteId : null} blockedRouteId={blockedRouteId} draggingTrackId={draggingTrackId} disabled={bridgeStatus !== 'ready' || loading} onRoute={(routeId, trackId) => void handleMove(routeId, trackId)} onConfigure={() => setRouteSettingsOpen((open) => !open)} />
+          <RoutingMatrix routes={routes} selectedTrackId={selectedTrack?.trackId ?? null} activeRouteId={activeRouteId} recentRouteId={recentRouteId} blockedRouteId={blockedRouteId} draggingTrackId={draggingTrackId} disabled={bridgeStatus !== 'ready' || loading} onRoute={(routeId, trackId) => void handleMove(routeId, trackId)} onConfigure={() => setRouteSettingsOpen((open) => !open)} />
           {routeSettingsOpen && <RouteSettings routes={routes} disabled={bridgeStatus !== 'ready' || loading} onRoutesChanged={setRoutes} />}
         </aside>
       </section>

@@ -19,8 +19,9 @@ function detailFor(route: RoutePreset): string {
 }
 
 export function RoutingMatrix({ routes, selectedTrackId, activeRouteId, recentRouteId, blockedRouteId, disabled, draggingTrackId, onRoute, onConfigure }: RoutingMatrixProps) {
-  const entries = useMemo(() => matrixEntries(routes, selectedTrackId, activeRouteId, recentRouteId, blockedRouteId), [activeRouteId, blockedRouteId, recentRouteId, routes, selectedTrackId])
-  const zero = zeroEntry(selectedTrackId)
+  const interactionTrackId = draggingTrackId ?? selectedTrackId
+  const entries = useMemo(() => matrixEntries(routes, interactionTrackId, activeRouteId, recentRouteId, blockedRouteId), [activeRouteId, blockedRouteId, interactionTrackId, recentRouteId, routes])
+  const zero = zeroEntry(interactionTrackId)
   const rows = [entries.slice(0, 3), entries.slice(3, 6), entries.slice(6, 9)]
   const [dragOverRouteId, setDragOverRouteId] = useState<string | null>(null)
 
@@ -48,13 +49,14 @@ export function RoutingMatrix({ routes, selectedTrackId, activeRouteId, recentRo
               <button
                 className={`routing-slot routing-slot-${entry.state} ${dragOverRouteId === entry.route.routeId && draggingTrackId ? 'routing-slot-drop-target' : ''}`}
                 data-route-id={entry.route.routeId}
-                disabled={disabled || entry.state === 'unassigned' || entry.state === 'blocked' || !selectedTrackId}
+                disabled={disabled || entry.state === 'unassigned' || entry.state === 'blocked' || !interactionTrackId}
                 key={entry.route.routeId}
                 aria-keyshortcuts={entry.route.routeId}
                 aria-pressed={entry.state === 'active'}
                 aria-label={`${entry.displayLabel}, Route ${entry.route.routeId}, ${entry.state}`}
+                aria-describedby={`routing-hint-${entry.route.routeId}`}
                 onClick={() => onRoute(entry.route.routeId)}
-                onDragOver={(event) => { if (!disabled && entry.state !== 'unassigned') { event.preventDefault(); setDragOverRouteId(entry.route.routeId) } }}
+                onDragOver={(event) => { if (!disabled && entry.state !== 'unassigned' && entry.state !== 'blocked') { event.preventDefault(); setDragOverRouteId(entry.route.routeId) } }}
                 onDragLeave={() => { if (dragOverRouteId === entry.route.routeId) setDragOverRouteId(null) }}
                 onDrop={dropTrack}
                 title={entry.hint}
@@ -63,15 +65,16 @@ export function RoutingMatrix({ routes, selectedTrackId, activeRouteId, recentRo
                 <span className="routing-slot-number">{entry.route.routeId}</span>
                 <span className="routing-slot-copy"><strong>{entry.displayLabel}</strong><small>{detailFor(entry.route)}</small></span>
                 <span className="routing-slot-state">{entry.state}</span>
+                <span className="sr-only" id={`routing-hint-${entry.route.routeId}`}>{entry.hint}</span>
               </button>
             ))}
           </div>
         ))}
       </div>
-      <div className="routing-holding" onDragOver={(event) => { event.preventDefault() }}>
+      <div className="routing-holding" role="note" aria-label="Current Crate holding area. Route zero does not move files.">
         <span className="routing-slot-number">0</span>
         <span className="routing-slot-copy"><strong>{zero.displayLabel}</strong><small>Unsorted Queue · holding area</small></span>
-        <span className="routing-slot-state">{zero.hint}</span>
+        <span className="routing-slot-state">{interactionTrackId ? 'Holding only · no move' : zero.hint}</span>
       </div>
       <div className="routing-matrix-footer">
         <span>{draggingTrackId ? 'Drop target active' : 'Routes stay visible when idle'}</span>
