@@ -4,8 +4,8 @@ import { getConfig, moveTrack, pickDirectory, ping, scanLibrary, setRoot as pers
 import type { LibrarySummary, MoveResult, RoutePreset, TrackRecord } from './bridge/contracts'
 import { AppShell } from './components/AppShell'
 import { AudioControls } from './components/AudioControls'
-import { RoutePad } from './components/RoutePad'
 import { RouteSettings } from './components/RouteSettings'
+import { RoutingMatrix } from './components/RoutingMatrix'
 import { SortMenu } from './components/SortMenu'
 import { TrackRow } from './components/TrackRow'
 
@@ -34,6 +34,9 @@ function App() {
   const [progress, setProgress] = useState<{ completed: number; total: number } | null>(null)
   const [playing, setPlaying] = useState(false)
   const [lastMove, setLastMove] = useState<MoveResult | null>(null)
+  const [activeRouteId, setActiveRouteId] = useState<string | null>(null)
+  const [blockedRouteId, setBlockedRouteId] = useState<string | null>(null)
+  const [draggingTrackId, setDraggingTrackId] = useState<string | null>(null)
   const audioRef = useRef<HTMLAudioElement>(null)
   const scanAbortRef = useRef<AbortController | null>(null)
 
@@ -101,16 +104,19 @@ function App() {
     scanAbortRef.current?.abort()
   }
 
-  const handleMove = useCallback(async (routeId: string) => {
-    if (!selectedTrack) return
+  const handleMove = useCallback(async (routeId: string, trackId = selectedTrack?.trackId) => {
+    if (!trackId) return
     setLoading(true)
     setError(null)
     try {
-      const result = await moveTrack(selectedTrack.trackId, routeId)
+      const result = await moveTrack(trackId, routeId)
       if (result.status !== 'moved') {
+        if (result.status === 'destination_exists') setBlockedRouteId(routeId)
         setError(result.error?.message ?? `Move failed: ${result.status}`)
         return
       }
+      setBlockedRouteId(null)
+      setActiveRouteId(routeId)
       setLastMove(result)
       await refreshLibrary('', sort)
     } catch (cause) {
@@ -118,7 +124,7 @@ function App() {
     } finally {
       setLoading(false)
     }
-  }, [refreshLibrary, selectedTrack, sort])
+  }, [refreshLibrary, selectedTrack?.trackId, sort])
 
   async function handleUndo() {
     if (!lastMove) return
@@ -131,6 +137,7 @@ function App() {
         return
       }
       setLastMove(null)
+      setActiveRouteId(null)
       await refreshLibrary('', sort)
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Could not undo the last move.')
@@ -156,6 +163,8 @@ function App() {
 
   const selectTrack = useCallback((index: number) => {
     setSelectedIndex(index)
+    setActiveRouteId(null)
+    setBlockedRouteId(null)
     setPlaying(false)
     audioRef.current?.pause()
   }, [])
@@ -232,7 +241,7 @@ function App() {
           </div>
           {summary?.tracks.length ? (
             <div className="track-list" aria-label="Loaded local tracks">
-              {summary.tracks.map((track, index) => <TrackRow key={track.trackId} track={track} selected={index === selectedIndex} playing={index === selectedIndex && playing} onSelect={() => selectTrack(index)} onTogglePlay={togglePlayback} />)}
+              {summary.tracks.map((track, index) => <TrackRow key={track.trackId} track={track} selected={index === selectedIndex} playing={index === selectedIndex && playing} onSelect={() => selectTrack(index)} onTogglePlay={togglePlayback} onDragStart={setDraggingTrackId} onDragEnd={() => setDraggingTrackId(null)} />)}
             </div>
           ) : (
             <div className="empty-state">
@@ -250,7 +259,7 @@ function App() {
           <div className="control-row"><kbd>A</kbd><span>Rewind 5 seconds</span></div>
           <div className="control-row"><kbd>D</kbd><span>Fast-forward 5 seconds</span></div>
           <AudioControls track={selectedTrack} audioRef={audioRef} onPlay={() => setPlaying(true)} onPause={() => setPlaying(false)} onEnded={() => setPlaying(false)} />
-          <RoutePad routes={routes} selectedTrackId={selectedTrack?.trackId ?? null} disabled={bridgeStatus !== 'ready' || loading} onRoute={(routeId) => void handleMove(routeId)} onConfigure={() => setRouteSettingsOpen((open) => !open)} />
+          <RoutingMatrix routes={routes} selectedTrackId={selectedTrack?.trackId ?? null} activeRouteId={activeRouteId} recentRouteId={lastMove ? activeRouteId : null} blockedRouteId={blockedRouteId} draggingTrackId={draggingTrackId} disabled={bridgeStatus !== 'ready' || loading} onRoute={(routeId, trackId) => void handleMove(routeId, trackId)} onConfigure={() => setRouteSettingsOpen((open) => !open)} />
           {routeSettingsOpen && <RouteSettings routes={routes} disabled={bridgeStatus !== 'ready' || loading} onRoutesChanged={setRoutes} />}
         </aside>
       </section>
