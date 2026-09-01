@@ -6,7 +6,12 @@ use std::path::PathBuf;
 use std::process::{Child, ChildStdin, ChildStdout, Command, Stdio};
 use std::sync::Mutex;
 
+#[cfg(windows)]
+use std::os::windows::process::CommandExt;
 use tauri::{AppHandle, Manager, State, WindowEvent};
+
+#[cfg(windows)]
+const CREATE_NO_WINDOW: u32 = 0x08000000;
 
 struct BridgeProcess {
     child: Child,
@@ -38,6 +43,39 @@ impl BridgeState {
         }
     }
 
+    fn packaged_executable(app: &AppHandle) -> Result<PathBuf, String> {
+        if let Ok(value) = env::var("CAPELHOUSE_BACKEND_EXE") {
+            return Ok(PathBuf::from(value));
+        }
+
+        let resource_dir = app
+            .path()
+            .resource_dir()
+            .map_err(|error| error.to_string())?;
+        let executable_dir = env::current_exe()
+            .ok()
+            .and_then(|path| path.parent().map(ToOwned::to_owned));
+        let target = env::var("TAURI_TARGET_TRIPLE")
+            .unwrap_or_else(|_| "x86_64-pc-windows-msvc".to_string());
+        let target_name = format!("backend_bridge-{target}.exe");
+
+        let mut candidates = vec![
+            resource_dir.join("binaries").join(&target_name),
+            resource_dir.join(&target_name),
+            resource_dir.join("backend_bridge.exe"),
+        ];
+        if let Some(directory) = executable_dir {
+            candidates.push(directory.join("binaries").join(&target_name));
+            candidates.push(directory.join(&target_name));
+            candidates.push(directory.join("backend_bridge.exe"));
+        }
+
+        candidates
+            .into_iter()
+            .find(|candidate| candidate.is_file())
+            .ok_or_else(|| "Packaged Python sidecar was not found beside the app or in Tauri resources.".to_string())
+    }
+
     fn spawn(app: &AppHandle) -> Result<BridgeProcess, String> {
         let mut command = if cfg!(debug_assertions) {
             let root = Self::process_root()?;
@@ -54,31 +92,14 @@ impl BridgeState {
                 .current_dir(root);
             command
         } else {
-            let executable = if let Ok(value) = env::var("CAPELHOUSE_BACKEND_EXE") {
-                PathBuf::from(value)
-            } else {
-                let resource_dir = app
-                    .path()
-                    .resource_dir()
-                    .map_err(|error| error.to_string())?;
-                let target = env::var("TAURI_TARGET_TRIPLE")
-                    .unwrap_or_else(|_| "x86_64-pc-windows-msvc".to_string());
-                let candidates = [
-                    resource_dir
-                        .join("binaries")
-                        .join(format!("backend_bridge-{target}.exe")),
-                    resource_dir.join(format!("backend_bridge-{target}.exe")),
-                    resource_dir.join("backend_bridge.exe"),
-                ];
-                candidates
-                    .into_iter()
-                    .find(|candidate| candidate.is_file())
-                    .ok_or_else(|| {
-                        "Packaged Python sidecar was not found in Tauri resources.".to_string()
-                    })?
-            };
-            Command::new(executable)
+            Command::new(Self::packaged_executable(app)?)
         };
+
+        #[cfg(windows)]
+        if !cfg!(debug_assertions) {
+            command.creation_flags(CREATE_NO_WINDOW);
+        }
+
         command
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
