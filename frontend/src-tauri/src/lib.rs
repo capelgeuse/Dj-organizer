@@ -41,46 +41,93 @@ impl BridgeState {
     fn spawn(app: &AppHandle) -> Result<BridgeProcess, String> {
         let mut command = if cfg!(debug_assertions) {
             let root = Self::process_root()?;
-            let python = env::var("CAPELHOUSE_PYTHON").unwrap_or_else(|_| "python".to_string());
+            let python = env::var("CAPELHOUSE_PYTHON").unwrap_or_else(|_| {
+                if cfg!(windows) {
+                    "python".to_string()
+                } else {
+                    "python3".to_string()
+                }
+            });
             let mut command = Command::new(python);
-            command.args(["-m", "bridge.local_bridge"]).current_dir(root);
+            command
+                .args(["-m", "bridge.local_bridge"])
+                .current_dir(root);
             command
         } else {
             let executable = if let Ok(value) = env::var("CAPELHOUSE_BACKEND_EXE") {
                 PathBuf::from(value)
             } else {
-                let resource_dir = app.path().resource_dir().map_err(|error| error.to_string())?;
-                let target = env::var("TAURI_TARGET_TRIPLE").unwrap_or_else(|_| "x86_64-pc-windows-msvc".to_string());
+                let resource_dir = app
+                    .path()
+                    .resource_dir()
+                    .map_err(|error| error.to_string())?;
+                let target = env::var("TAURI_TARGET_TRIPLE")
+                    .unwrap_or_else(|_| "x86_64-pc-windows-msvc".to_string());
                 let candidates = [
-                    resource_dir.join("binaries").join(format!("backend_bridge-{target}.exe")),
+                    resource_dir
+                        .join("binaries")
+                        .join(format!("backend_bridge-{target}.exe")),
                     resource_dir.join(format!("backend_bridge-{target}.exe")),
                     resource_dir.join("backend_bridge.exe"),
                 ];
-                candidates.into_iter().find(|candidate| candidate.is_file()).ok_or_else(|| "Packaged Python sidecar was not found in Tauri resources.".to_string())?
+                candidates
+                    .into_iter()
+                    .find(|candidate| candidate.is_file())
+                    .ok_or_else(|| {
+                        "Packaged Python sidecar was not found in Tauri resources.".to_string()
+                    })?
             };
             Command::new(executable)
         };
         command
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
-            .stderr(Stdio::piped());
-        let mut child = command.spawn().map_err(|error| format!("Could not start Python bridge: {error}"))?;
-        let stdin = child.stdin.take().ok_or_else(|| "Python bridge stdin was unavailable.".to_string())?;
-        let stdout = child.stdout.take().ok_or_else(|| "Python bridge stdout was unavailable.".to_string())?;
-        Ok(BridgeProcess { child, stdin, stdout: BufReader::new(stdout) })
+            .stderr(Stdio::inherit());
+        let mut child = command
+            .spawn()
+            .map_err(|error| format!("Could not start Python bridge: {error}"))?;
+        let stdin = child
+            .stdin
+            .take()
+            .ok_or_else(|| "Python bridge stdin was unavailable.".to_string())?;
+        let stdout = child
+            .stdout
+            .take()
+            .ok_or_else(|| "Python bridge stdout was unavailable.".to_string())?;
+        Ok(BridgeProcess {
+            child,
+            stdin,
+            stdout: BufReader::new(stdout),
+        })
     }
 
     fn request(&self, app: &AppHandle, request: String) -> Result<String, String> {
-        let mut guard = self.0.lock().map_err(|_| "Bridge state lock was poisoned.".to_string())?;
+        let mut guard = self
+            .0
+            .lock()
+            .map_err(|_| "Bridge state lock was poisoned.".to_string())?;
         if guard.is_none() {
             *guard = Some(Self::spawn(app)?);
         }
-        let process = guard.as_mut().ok_or_else(|| "Bridge process was not created.".to_string())?;
-        process.stdin.write_all(request.as_bytes()).map_err(|error| error.to_string())?;
-        process.stdin.write_all(b"\n").map_err(|error| error.to_string())?;
+        let process = guard
+            .as_mut()
+            .ok_or_else(|| "Bridge process was not created.".to_string())?;
+        process
+            .stdin
+            .write_all(request.as_bytes())
+            .map_err(|error| error.to_string())?;
+        process
+            .stdin
+            .write_all(b"\n")
+            .map_err(|error| error.to_string())?;
         process.stdin.flush().map_err(|error| error.to_string())?;
         let mut response = String::new();
-        if process.stdout.read_line(&mut response).map_err(|error| error.to_string())? == 0 {
+        if process
+            .stdout
+            .read_line(&mut response)
+            .map_err(|error| error.to_string())?
+            == 0
+        {
             let _ = process.child.kill();
             let _ = process.child.wait();
             *guard = None;
@@ -91,8 +138,12 @@ impl BridgeState {
 
     fn shutdown(&self) {
         let Ok(mut guard) = self.0.lock() else { return };
-        let Some(mut process) = guard.take() else { return };
-        let _ = process.stdin.write_all(b"{\"id\":\"tauri-shutdown\",\"command\":\"shutdown\",\"payload\":{}}\n");
+        let Some(mut process) = guard.take() else {
+            return;
+        };
+        let _ = process
+            .stdin
+            .write_all(b"{\"id\":\"tauri-shutdown\",\"command\":\"shutdown\",\"payload\":{}}\n");
         let _ = process.stdin.flush();
         let mut response = String::new();
         let _ = process.stdout.read_line(&mut response);
@@ -102,7 +153,11 @@ impl BridgeState {
 }
 
 #[tauri::command]
-fn bridge_request(app: AppHandle, request: String, state: State<'_, BridgeState>) -> Result<String, String> {
+fn bridge_request(
+    app: AppHandle,
+    request: String,
+    state: State<'_, BridgeState>,
+) -> Result<String, String> {
     state.request(&app, request)
 }
 
