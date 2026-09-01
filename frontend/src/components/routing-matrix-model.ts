@@ -43,7 +43,7 @@ export function matrixEntries(routes: RoutePreset[], selectedTrackId: string | n
       route,
       state,
       displayLabel: configured ? route.label : 'Unassigned',
-      hint: selectedTrackId ? `Assign to Route ${routeId} · Press ${routeId}` : `Select a track to assign to Route ${routeId}`,
+      hint: `Route ${routeId} · ${state}`,
     }
   })
 }

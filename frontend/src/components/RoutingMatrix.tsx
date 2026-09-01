@@ -1,10 +1,11 @@
 import { useMemo, useState } from 'react'
 import type { RoutePreset } from '../bridge/contracts'
-import { matrixEntries, zeroEntry } from './routing-matrix-model'
+import { matrixEntries } from './routing-matrix-model'
 
 type RoutingMatrixProps = {
   routes: RoutePreset[]
   selectedTrackId: string | null
+  selectedTrackLabel: string | null
   activeRouteId: string | null
   recentRouteId: string | null
   blockedRouteId: string | null
@@ -14,14 +15,9 @@ type RoutingMatrixProps = {
   onConfigure: () => void
 }
 
-function detailFor(route: RoutePreset): string {
-  return route.category ?? route.genre ?? (route.relativeDestination || 'Not assigned')
-}
-
-export function RoutingMatrix({ routes, selectedTrackId, activeRouteId, recentRouteId, blockedRouteId, disabled, draggingTrackId, onRoute, onConfigure }: RoutingMatrixProps) {
+export function RoutingMatrix({ routes, selectedTrackId, selectedTrackLabel, activeRouteId, recentRouteId, blockedRouteId, disabled, draggingTrackId, onRoute, onConfigure }: RoutingMatrixProps) {
   const interactionTrackId = draggingTrackId ?? selectedTrackId
   const entries = useMemo(() => matrixEntries(routes, interactionTrackId, activeRouteId, recentRouteId, blockedRouteId), [activeRouteId, blockedRouteId, interactionTrackId, recentRouteId, routes])
-  const zero = zeroEntry(interactionTrackId)
   const rows = [entries.slice(0, 3), entries.slice(3, 6), entries.slice(6, 9)]
   const [dragOverRouteId, setDragOverRouteId] = useState<string | null>(null)
 
@@ -49,7 +45,7 @@ export function RoutingMatrix({ routes, selectedTrackId, activeRouteId, recentRo
               <button
                 className={`routing-slot routing-slot-${entry.state} ${dragOverRouteId === entry.route.routeId && draggingTrackId ? 'routing-slot-drop-target' : ''}`}
                 data-route-id={entry.route.routeId}
-                disabled={disabled || entry.state === 'unassigned' || entry.state === 'blocked' || !interactionTrackId}
+                disabled={disabled || entry.state === 'unassigned' || entry.state === 'blocked'}
                 key={entry.route.routeId}
                 aria-keyshortcuts={entry.route.routeId}
                 aria-pressed={entry.state === 'active'}
@@ -63,21 +59,18 @@ export function RoutingMatrix({ routes, selectedTrackId, activeRouteId, recentRo
                 type="button"
               >
                 <span className="routing-slot-number">{entry.route.routeId}</span>
-                <span className="routing-slot-copy"><strong>{entry.displayLabel}</strong><small>{detailFor(entry.route)}</small></span>
-                <span className="routing-slot-state">{entry.state}</span>
+                <span className="routing-slot-copy"><span className="routing-slot-route">ROUTE {entry.route.routeId}</span><strong>{entry.displayLabel}</strong></span>
                 <span className="sr-only" id={`routing-hint-${entry.route.routeId}`}>{entry.hint}</span>
               </button>
             ))}
           </div>
         ))}
       </div>
-      <div className="routing-holding" role="note" aria-label="Current Crate holding area. Route zero does not move files.">
+      <div className="routing-holding" role="note" aria-label={`Current Crate. ${selectedTrackLabel ?? 'Holding area'}. Route zero does not move files.`}>
         <span className="routing-slot-number">0</span>
-        <span className="routing-slot-copy"><strong>{zero.displayLabel}</strong><small>Unsorted Queue · holding area</small></span>
-        <span className="routing-slot-state">{interactionTrackId ? 'Holding only · no move' : zero.hint}</span>
+        <span className="routing-slot-copy"><span className="routing-slot-route">CURRENT CRATE</span><strong>{selectedTrackLabel ?? 'Holding area'}</strong></span>
       </div>
       <div className="routing-matrix-footer">
-        <span>{draggingTrackId ? 'Drop target active' : 'Routes stay visible when idle'}</span>
         <button type="button" className="route-configure-button" onClick={onConfigure} disabled={disabled}>Customize routes</button>
       </div>
     </section>
