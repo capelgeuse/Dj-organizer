@@ -7,6 +7,7 @@ import sys
 import tempfile
 import time
 import unittest
+from unittest.mock import patch
 from pathlib import Path
 
 from architecture.contracts import RoutePreset
@@ -20,6 +21,29 @@ from core.sorting import sort_tracks
 
 
 class BridgeTests(unittest.TestCase):
+    def test_mp3_apic_artwork_is_extracted_to_cache(self):
+        from core.metadata import _cache_embedded_artwork
+
+        class ApicFrame:
+            data = b"embedded-mp3-cover"
+            mime = "image/png"
+
+        class Id3Tags:
+            @staticmethod
+            def getall(name: str):
+                return [ApicFrame()] if name == "APIC" else []
+
+        class Mp3Metadata:
+            tags = Id3Tags()
+
+        with tempfile.TemporaryDirectory() as directory, patch.dict("os.environ", {"CAPELHOUSE_ARTWORK_DIR": directory}):
+            cached = _cache_embedded_artwork(Path("track.mp3"), Mp3Metadata())
+
+            self.assertIsNotNone(cached)
+            target = Path(cached or "")
+            self.assertEqual(target.suffix, ".png")
+            self.assertEqual(target.read_bytes(), b"embedded-mp3-cover")
+
     def test_library_query_without_root_fails_closed(self):
         from bridge.local_bridge import BackendApplication, BridgeException
 
@@ -129,6 +153,48 @@ class BridgeTests(unittest.TestCase):
         self.assertTrue(shutdown["data"]["shuttingDown"])
         self.assertEqual(process.returncode, 0)
 
+    def test_protocol_accepts_utf8_bom_on_first_request(self):
+        from bridge.local_bridge import BackendApplication, serve
+        from io import StringIO
+
+        output = StringIO()
+        config = ConfigStore(Path(tempfile.mkdtemp()) / "config.json")
+        lines = '\ufeff{"id":"one","command":"ping","payload":{}}\n'
+        serve(StringIO(lines), output, BackendApplication(config))
+        response = json.loads(output.getvalue())
+
+        self.assertEqual(response["id"], "one")
+        self.assertTrue(response["ok"])
+        self.assertTrue(response["data"]["ready"])
+
+    def test_protocol_serializes_unicode_over_ascii_only_stream(self):
+        from bridge.local_bridge import BackendApplication, serve
+        from io import StringIO
+
+        class AsciiOnlyOutput(StringIO):
+            def write(self, value):
+                value.encode("ascii")
+                return super().write(value)
+
+        config = ConfigStore(Path(tempfile.mkdtemp()) / "config.json")
+        config.set_routes([
+            {
+                "routeId": str(index),
+                "label": f"Música {index}",
+                "relativeDestination": f"route-{index}",
+                "category": None,
+                "genre": None,
+            }
+            for index in range(1, 10)
+        ])
+        output = AsciiOnlyOutput()
+        lines = '{"id":"config","command":"get_config","payload":{}}\n'
+        serve(StringIO(lines), output, BackendApplication(config))
+        response = json.loads(output.getvalue())
+
+        self.assertTrue(response["ok"])
+        self.assertEqual(response["data"]["routes"][0]["label"], "Música 1")
+
     def test_bridge_returns_structured_unknown_command_error(self):
         from bridge.local_bridge import BackendApplication, serve
         from io import StringIO
@@ -155,12 +221,12 @@ class FilesystemAuthorityTests(unittest.TestCase):
 
             self.assertEqual(paths, {"direct.mp3", "UNSORTED/nested/nested.mp3"})
 
-    def test_default_genre_routes_exclude_their_generated_folders(self):
+    def test_default_routes_are_direct_destination_folders(self):
         prefixes = destination_prefixes(default_routes())
 
-        self.assertIn("House/Inicio", prefixes)
-        self.assertIn("Techno/Ponchadas", prefixes)
-        self.assertIn("Progressive House/Medio", prefixes)
+        self.assertIn("Route 1", prefixes)
+        self.assertIn("Route 5", prefixes)
+        self.assertIn("Route 8", prefixes)
         self.assertIn("Needs Review", prefixes)
 
     def test_sorting_keeps_unknown_values_after_known_values_in_both_directions(self):
@@ -184,7 +250,9 @@ class FilesystemAuthorityTests(unittest.TestCase):
 
             route = next(item for item in document["routes"] if item["routeId"] == "1")
             self.assertEqual(route["label"], "August 31")
-            self.assertEqual(route["relativeDestination"], "DJ Sets/August 31/{bpmBucket}")
+            self.assertEqual(route["relativeDestination"], "DJ Sets/August 31")
+            self.assertIsNone(route["category"])
+            self.assertIsNone(route["genre"])
             with self.assertRaises(ValueError):
                 config.set_route_path("1", outside, "Outside")
 
@@ -195,8 +263,8 @@ class FilesystemAuthorityTests(unittest.TestCase):
             source.write_bytes(b"fixture")
             config = ConfigStore(root / "config.json")
             config.set_root(str(root))
-            config.set_routes([RoutePreset("1", "House", "{genre}/Inicio/{bpmBucket}", "Inicio", "House").to_dict()] + [
-                RoutePreset(str(index), f"Route {index}", "Needs Review/{bpmBucket}").to_dict()
+            config.set_routes([RoutePreset("1", "House", "House/Inicio").to_dict()] + [
+                RoutePreset(str(index), f"Route {index}", "Needs Review").to_dict()
                 for index in range(2, 10)
             ])
             relative = source.relative_to(root)
@@ -204,7 +272,7 @@ class FilesystemAuthorityTests(unittest.TestCase):
             classifier = Classifier(config)
 
             result = classifier.move(track_id, "1")
-            destination = root / "House" / "Inicio" / "BPM UNKNOWN" / "song.mp3"
+            destination = root / "House" / "Inicio" / "song.mp3"
             self.assertEqual(result.status.value, "moved")
             self.assertFalse(source.exists())
             self.assertTrue(destination.exists())
@@ -220,7 +288,7 @@ class FilesystemAuthorityTests(unittest.TestCase):
             root = Path(directory)
             source = root / "song.mp3"
             source.write_bytes(b"source")
-            destination = root / "Needs Review" / "BPM UNKNOWN" / source.name
+            destination = root / "Needs Review" / source.name
             destination.parent.mkdir(parents=True)
             destination.write_bytes(b"destination")
             config = ConfigStore(root / "config.json")
@@ -228,7 +296,7 @@ class FilesystemAuthorityTests(unittest.TestCase):
             config.set_routes([{
                 "routeId": str(index),
                 "label": f"Route {index}",
-                "relativeDestination": "Needs Review/{bpmBucket}",
+                "relativeDestination": "Needs Review",
                 "category": None,
                 "genre": None,
             } for index in range(1, 10)])

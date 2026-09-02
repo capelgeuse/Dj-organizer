@@ -50,7 +50,7 @@ export function RouteSettings({ routes, disabled, onRoutesChanged }: RouteSettin
 
   return (
     <section className="route-settings" aria-labelledby="route-settings-title">
-      <div className="route-settings-heading"><div><p className="eyebrow">ROUTE SETTINGS</p><h3 id="route-settings-title">Configure Numpad 1–9</h3></div><span>Relative to selected root</span></div>
+      <div className="route-settings-heading"><div><p className="eyebrow">ROUTE SETTINGS</p><h3 id="route-settings-title">Configure Numpad 1–9</h3></div><span>Each key moves directly to one folder</span></div>
       <div className="route-settings-list">
         {draft.map((route) => <div className="route-setting" key={route.routeId}>
           <strong>{route.routeId}</strong>

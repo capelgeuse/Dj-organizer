@@ -1,9 +1,22 @@
 #root { min-height: 100vh; }
 
+.player-start {
+  display: grid;
+  width: 105px;
+  gap: 4px;
+  color: var(--accent);
+  font-family: var(--mono);
+  font-size: 0.5rem;
+  white-space: nowrap;
+}
+.player-start input { width: 100%; height: 3px; accent-color: var(--accent); }
+
 .app-shell {
+  display: flex;
   width: 100%;
   height: 100vh;
   min-height: 560px;
+  flex-direction: column;
   overflow: hidden;
   color: var(--text);
   background: var(--bg);
@@ -19,6 +32,7 @@
 .topbar {
   display: flex;
   height: 62px;
+  flex: 0 0 62px;
   align-items: center;
   gap: 28px;
   border-bottom: 1px solid var(--line);
@@ -73,6 +87,8 @@
   border-bottom: 1px solid var(--line);
   background: var(--line);
 }
+
+.audio-controls { flex: 0 0 76px; }
 
 .sidebar, .queue-panel, .inspector { min-width: 0; background: var(--surface); }
 .sidebar { display: flex; min-height: 0; flex-direction: column; overflow: auto; border-right: 1px solid var(--line); padding: 19px 12px 12px; }

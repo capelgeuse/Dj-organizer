@@ -19,4 +19,7 @@ Set-Location $Repo
 
 Set-Location $Frontend
 npm run tauri:build
+if ($LASTEXITCODE -ne 0) {
+    throw "Tauri desktop build failed with exit code $LASTEXITCODE."
+}
 Write-Host "CapelHouse bundles are available under frontend\src-tauri\target\release\bundle."

@@ -34,6 +34,6 @@
     "active": true,
     "targets": "all",
     "externalBin": ["binaries/backend_bridge"],
-    "icon": ["icons/icon.png"]
+    "icon": ["icons/icon.png", "icons/icon.ico"]
   }
 }

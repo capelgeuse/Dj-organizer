@@ -24,15 +24,15 @@ def default_config_path() -> Path:
 
 def default_routes() -> list[RoutePreset]:
     presets = (
-        ("1", "House · Inicio", "{genre}/Inicio/{bpmBucket}", "Inicio", "House"),
-        ("2", "House · Medio", "{genre}/Medio/{bpmBucket}", "Medio", "House"),
-        ("3", "House · Ponchadas", "{genre}/Ponchadas/{bpmBucket}", "Ponchadas", "House"),
-        ("4", "Techno · Inicio", "{genre}/Inicio/{bpmBucket}", "Inicio", "Techno"),
-        ("5", "Techno · Medio", "{genre}/Medio/{bpmBucket}", "Medio", "Techno"),
-        ("6", "Techno · Ponchadas", "{genre}/Ponchadas/{bpmBucket}", "Ponchadas", "Techno"),
-        ("7", "Progressive · Inicio", "{genre}/Inicio/{bpmBucket}", "Inicio", "Progressive House"),
-        ("8", "Progressive · Medio", "{genre}/Medio/{bpmBucket}", "Medio", "Progressive House"),
-        ("9", "Needs Review", "Needs Review/{bpmBucket}", None, None),
+        ("1", "House · Inicio", "Route 1", None, None),
+        ("2", "House · Medio", "Route 2", None, None),
+        ("3", "House · Ponchadas", "Route 3", None, None),
+        ("4", "Techno · Inicio", "Route 4", None, None),
+        ("5", "Techno · Medio", "Route 5", None, None),
+        ("6", "Techno · Ponchadas", "Route 6", None, None),
+        ("7", "Progressive · Inicio", "Route 7", None, None),
+        ("8", "Progressive · Medio", "Route 8", None, None),
+        ("9", "Needs Review", "Needs Review", None, None),
     )
     return [
         RoutePreset(route_id, label, destination, category, genre)
@@ -46,7 +46,7 @@ def _route_to_dict(route: RoutePreset) -> dict[str, object]:
 
 def _default_document() -> dict[str, Any]:
     return {
-        "schemaVersion": 1,
+        "schemaVersion": 2,
         "root": "",
         "categories": list(DEFAULT_CATEGORIES),
         "genres": list(DEFAULT_GENRES),
@@ -65,6 +65,20 @@ class ConfigStore:
             if isinstance(document, dict):
                 merged = _default_document()
                 merged.update(document)
+                if int(document.get("schemaVersion", 1)) < 2:
+                    routes = merged.get("routes", [])
+                    for route in routes if isinstance(routes, list) else []:
+                        if not isinstance(route, dict):
+                            continue
+                        destination = str(route.get("relativeDestination", "")).replace("\\", "/")
+                        destination = destination.removesuffix("/{bpmBucket}")
+                        if "{" in destination or "}" in destination:
+                            destination = str(route.get("label", f"Route {route.get('routeId', '')}")).strip()
+                        route["relativeDestination"] = destination
+                        route["category"] = None
+                        route["genre"] = None
+                    merged["schemaVersion"] = 2
+                    self.write(merged)
                 return merged
         except (OSError, json.JSONDecodeError):
             pass
@@ -110,11 +124,13 @@ class ConfigStore:
         selected = Path(path).expanduser().resolve()
         if not root.is_dir() or root not in selected.parents or selected == root:
             raise ValueError("DESTINATION_OUTSIDE_ROOT")
-        relative = selected.relative_to(root).as_posix().rstrip("/") + "/{bpmBucket}"
+        relative = selected.relative_to(root).as_posix().rstrip("/")
         routes = list(document.get("routes", []))
         for route in routes:
             if isinstance(route, dict) and str(route.get("routeId")) == route_id:
                 route["relativeDestination"] = relative
+                route["category"] = None
+                route["genre"] = None
                 if label is not None and label.strip():
                     route["label"] = label.strip()
                 break

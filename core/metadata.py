@@ -57,6 +57,11 @@ def _artwork_path(path: Path) -> str | None:
 
 def _cache_embedded_artwork(path: Path, raw: Any) -> str | None:
     pictures = list(getattr(raw, "pictures", []) or [])
+    tags = getattr(raw, "tags", None)
+    getall = getattr(tags, "getall", None)
+    if callable(getall):
+        # MP3 artwork lives in ID3 APIC frames rather than raw.pictures.
+        pictures.extend(list(getall("APIC") or []))
     if not pictures:
         return None
     picture = pictures[0]

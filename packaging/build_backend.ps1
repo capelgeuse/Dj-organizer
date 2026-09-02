@@ -24,9 +24,21 @@ if (-not (Test-Path $BuiltSidecar)) {
     throw "PyInstaller did not produce $BuiltSidecar"
 }
 
-$Probe = '{"id":"packaging-smoke","command":"ping","payload":{}}' | & $BuiltSidecar
-if ($LASTEXITCODE -ne 0) {
-    throw "Packaged sidecar exited with code $LASTEXITCODE during ping smoke test."
+$StartInfo = New-Object System.Diagnostics.ProcessStartInfo
+$StartInfo.FileName = $BuiltSidecar
+$StartInfo.UseShellExecute = $false
+$StartInfo.RedirectStandardInput = $true
+$StartInfo.RedirectStandardOutput = $true
+$StartInfo.RedirectStandardError = $true
+$Process = [System.Diagnostics.Process]::Start($StartInfo)
+$RequestBytes = [System.Text.Encoding]::UTF8.GetBytes("{`"id`":`"packaging-smoke`",`"command`":`"ping`",`"payload`":{}}`n")
+$Process.StandardInput.BaseStream.Write($RequestBytes, 0, $RequestBytes.Length)
+$Process.StandardInput.BaseStream.Flush()
+$Probe = $Process.StandardOutput.ReadLine()
+$Process.StandardInput.Close()
+$Process.WaitForExit()
+if ($Process.ExitCode -ne 0) {
+    throw "Packaged sidecar exited with code $($Process.ExitCode) during ping smoke test: $($Process.StandardError.ReadToEnd())"
 }
 $ProbeResponse = $Probe | ConvertFrom-Json
 if (-not $ProbeResponse.ok -or -not $ProbeResponse.data.ready) {

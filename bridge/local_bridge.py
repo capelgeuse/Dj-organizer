@@ -215,7 +215,9 @@ def serve(input_stream: TextIO, output_stream: TextIO, application: BackendAppli
             request_id = ""
             should_shutdown = False
             try:
-                request = json.loads(line)
+                # Windows launchers may emit a UTF-8 BOM on the first JSON-lines
+                # request. It is transport metadata, not part of the protocol.
+                request = json.loads(line.lstrip("\ufeff"))
                 if not isinstance(request, dict):
                     raise BridgeException(BridgeError(ErrorCode.INVALID_REQUEST, "Request must be a JSON object."))
                 request_id = str(request.get("id", ""))
@@ -228,7 +230,9 @@ def serve(input_stream: TextIO, output_stream: TextIO, application: BackendAppli
                 response = BridgeResponse(request_id, False, error=BridgeError(ErrorCode.BRIDGE_PROTOCOL_ERROR, "Malformed JSON request.").to_dict())
             except Exception as error:  # Last-resort protocol boundary; details stay structured.
                 response = BridgeResponse(request_id, False, error=BridgeError(ErrorCode.INTERNAL_ERROR, str(error), retryable=True).to_dict())
-            output_stream.write(json.dumps(response.to_dict(), ensure_ascii=False) + "\n")
+            # Keep the process boundary encoding-independent on Windows consoles.
+            # JSON consumers reconstruct Unicode values from escaped code points.
+            output_stream.write(json.dumps(response.to_dict(), ensure_ascii=True) + "\n")
             output_stream.flush()
             if should_shutdown:
                 break

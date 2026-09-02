@@ -18,15 +18,9 @@ def _safe_component(value: str, fallback: str) -> str:
 
 
 def resolve_destination(route: RoutePreset, track: TrackRecord) -> Path:
-    genre = _safe_component(route.genre or track.genre or "Unknown", "Unknown")
-    category = _safe_component(route.category or "Needs Review", "Needs Review")
-    values = {
-        "genre": genre,
-        "category": category,
-        "bpmBucket": bpm_bucket(track.bpm),
-        "bpm": str(int(track.bpm)) if track.bpm is not None else "UNKNOWN",
-    }
-    relative = route.relative_destination.format(**values)
+    relative = route.relative_destination
+    if "{" in relative or "}" in relative:
+        raise ValueError("INVALID_ROUTE")
     destination = Path(relative)
     if destination.is_absolute() or any(part in {"", ".", ".."} for part in destination.parts):
         raise ValueError("INVALID_ROUTE")

@@ -12,6 +12,12 @@ import { TrackRow } from './components/TrackRow'
 
 type BridgeStatus = 'checking' | 'ready' | 'offline'
 type InspectorTab = 'info' | 'files' | 'notes'
+type MoveIntent = { routeId: string; trackId?: string }
+
+function reportPlaybackFailure(cause: unknown, setError: (message: string) => void) {
+  if (cause instanceof DOMException && cause.name === 'AbortError') return
+  setError('This track could not be played by the local audio engine.')
+}
 
 type PreviewTrackInfo = {
   key: string
@@ -142,7 +148,12 @@ function App() {
   const [rating, setRating] = useState(0)
   const [tags, setTags] = useState<string[]>([])
   const audioRef = useRef<HTMLAudioElement>(null)
+  const autoplaySelectionRef = useRef(false)
   const scanAbortRef = useRef<AbortController | null>(null)
+  const moveQueueRef = useRef<MoveIntent[]>([])
+  const moveQueueRunningRef = useRef(false)
+  const summaryRef = useRef<LibrarySummary | null>(null)
+  const selectedIndexRef = useRef(-1)
 
   const selectedTrack: TrackRecord | null = useMemo(
     () => summary?.tracks[selectedIndex] ?? null,
@@ -183,16 +194,21 @@ function App() {
     return () => { mounted = false }
   }, [])
 
-  const refreshLibrary = useCallback(async (rootValue: string, sortValue: LibrarySummary['sort'], preferredIndex = 0) => {
+  const refreshLibrary = useCallback(async (rootValue: string, sortValue: LibrarySummary['sort'], preferredIndex = 0, autoplay = false) => {
     const controller = new AbortController()
     scanAbortRef.current = controller
     setProgress({ completed: 0, total: 0 })
     try {
       const next = await scanLibrary(rootValue.trim() || undefined, sortValue, setProgress, controller.signal)
+      const nextIndex = next.tracks.length ? Math.min(preferredIndex, next.tracks.length - 1) : -1
+      summaryRef.current = next
+      selectedIndexRef.current = nextIndex
       setSummary(next)
-      setSelectedIndex(next.tracks.length ? Math.min(preferredIndex, next.tracks.length - 1) : -1)
+      autoplaySelectionRef.current = autoplay && nextIndex >= 0
+      setSelectedIndex(nextIndex)
       setPlaying(false)
       audioRef.current?.pause()
+      return next
     } finally {
       scanAbortRef.current = null
       setProgress(null)
@@ -230,33 +246,47 @@ function App() {
     scanAbortRef.current?.abort()
   }
 
-  const handleMove = useCallback(async (routeId: string, trackId = selectedTrack?.trackId) => {
-    if (bridgeStatus !== 'ready' || !trackId) return
-    setLoading(true)
-    setError(null)
-    setActiveRouteId(routeId)
-    audioRef.current?.pause()
-    setPlaying(false)
+  const drainMoveQueue = useCallback(async () => {
+    if (moveQueueRunningRef.current) return
+    moveQueueRunningRef.current = true
     try {
-      const result = await moveTrack(trackId, routeId)
-      if (result.status !== 'moved') {
-        setActiveRouteId(null)
-        if (result.status === 'destination_exists') setBlockedRouteId(routeId)
-        setError(result.error?.message ?? `Move failed: ${result.status}`)
-        return
+      while (moveQueueRef.current.length) {
+        const intent = moveQueueRef.current.shift()
+        if (!intent) continue
+        const currentIndex = selectedIndexRef.current
+        const trackId = intent.trackId ?? summaryRef.current?.tracks[currentIndex]?.trackId
+        if (!trackId) continue
+        setError(null)
+        setActiveRouteId(intent.routeId)
+        audioRef.current?.pause()
+        setPlaying(false)
+        try {
+          const result = await moveTrack(trackId, intent.routeId)
+          if (result.status !== 'moved') {
+            if (result.status === 'destination_exists') setBlockedRouteId(intent.routeId)
+            setError(result.error?.message ?? `Move failed: ${result.status}`)
+            continue
+          }
+          setBlockedRouteId(null)
+          setRecentRouteId(intent.routeId)
+          setLastMove(result)
+          await refreshLibrary('', sort, Math.max(0, currentIndex), true)
+        } catch (cause) {
+          setError(cause instanceof Error ? cause.message : 'Could not move the selected track.')
+        } finally {
+          setActiveRouteId(null)
+        }
       }
-      setBlockedRouteId(null)
-      setActiveRouteId(null)
-      setRecentRouteId(routeId)
-      setLastMove(result)
-      await refreshLibrary('', sort, Math.max(0, selectedIndex))
-    } catch (cause) {
-      setActiveRouteId(null)
-      setError(cause instanceof Error ? cause.message : 'Could not move the selected track.')
     } finally {
-      setLoading(false)
+      moveQueueRunningRef.current = false
     }
-  }, [bridgeStatus, refreshLibrary, selectedIndex, selectedTrack?.trackId, sort])
+  }, [refreshLibrary, sort])
+
+  const handleMove = useCallback((routeId: string, trackId?: string) => {
+    if (bridgeStatus !== 'ready') return
+    moveQueueRef.current.push({ routeId, ...(trackId ? { trackId } : {}) })
+    void drainMoveQueue()
+  }, [bridgeStatus, drainMoveQueue])
 
   async function handleUndo() {
     if (!lastMove || bridgeStatus !== 'ready') return
@@ -295,17 +325,44 @@ function App() {
   }
 
   const selectTrack = useCallback((index: number) => {
+    selectedIndexRef.current = index
+    autoplaySelectionRef.current = true
     setSelectedIndex(index)
     setActiveRouteId(null)
     setBlockedRouteId(null)
-    setPlaying(false)
+    setPlaying(previewMode)
     const nextInfo = summary ? infoFor(summary.tracks[index], index) : null
     setRating(nextInfo?.rating ?? 0)
     setTags(nextInfo?.tags ?? [])
-    audioRef.current?.pause()
-  }, [summary])
+    if (index === selectedIndex && !previewMode) {
+      void audioRef.current?.play().catch((cause: unknown) => reportPlaybackFailure(cause, setError))
+      autoplaySelectionRef.current = false
+    }
+  }, [previewMode, selectedIndex, summary])
 
-  function togglePlayback() {
+  useEffect(() => {
+    summaryRef.current = summary
+    selectedIndexRef.current = selectedIndex
+  }, [selectedIndex, summary])
+
+  useEffect(() => {
+    if (!autoplaySelectionRef.current || previewMode || !selectedTrack) return
+    audioRef.current?.load()
+  }, [previewMode, selectedTrack])
+
+  const playPendingSelection = useCallback(() => {
+    if (!autoplaySelectionRef.current || !selectedTrack) return
+    autoplaySelectionRef.current = false
+    if (previewMode) {
+      setPlaying(true)
+      return
+    }
+    const audio = audioRef.current
+    if (!audio) return
+    void audio.play().catch((cause: unknown) => reportPlaybackFailure(cause, setError))
+  }, [previewMode, selectedTrack])
+
+  const togglePlayback = useCallback(() => {
     if (!selectedTrack) return
     if (previewMode) {
       setPlaying((current) => !current)
@@ -313,15 +370,18 @@ function App() {
     }
     if (!audioRef.current) return
     if (playing) audioRef.current.pause()
-    else void audioRef.current.play().catch(() => setError('This track could not be played by the local audio engine.'))
-  }
+    else void audioRef.current.play().catch((cause: unknown) => reportPlaybackFailure(cause, setError))
+  }, [playing, previewMode, selectedTrack])
 
   useEffect(() => {
     function handleKeyboard(event: KeyboardEvent) {
       const target = event.target as HTMLElement | null
       if (!target || target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName)) return
       if (!summary?.tracks.length || bridgeStatus !== 'ready') return
-      if (event.code === 'KeyW') {
+      if (event.code === 'Space') {
+        event.preventDefault()
+        togglePlayback()
+      } else if (event.code === 'KeyW') {
         event.preventDefault()
         selectTrack(Math.max(0, selectedIndex - 1))
       } else if (event.code === 'KeyS') {
@@ -339,7 +399,7 @@ function App() {
         const match = event.code.match(/^Numpad([1-9])$/)
         const route = match ? routes.find((item) => item.routeId === match[1]) : null
         const routeConfigured = route && route.label.trim() && route.relativeDestination.trim()
-        if (match && routeConfigured && blockedRouteId !== match[1] && !loading) {
+        if (match && routeConfigured && blockedRouteId !== match[1]) {
           event.preventDefault()
           void handleMove(match[1])
         }
@@ -347,7 +407,7 @@ function App() {
     }
     window.addEventListener('keydown', handleKeyboard)
     return () => window.removeEventListener('keydown', handleKeyboard)
-  }, [blockedRouteId, bridgeStatus, handleMove, loading, routes, selectTrack, selectedIndex, summary])
+  }, [blockedRouteId, bridgeStatus, handleMove, loading, routes, selectTrack, selectedIndex, summary, togglePlayback])
 
   return (
     <AppShell bridgeStatus={bridgeStatus} previewMode={previewMode} root={root} onChangeRoot={() => void handlePickDirectory()} onSettings={() => setRouteSettingsOpen((open) => !open)}>
@@ -400,7 +460,7 @@ function App() {
             <div className="metadata-grid"><div><span>BPM</span><strong>{selectedTrack.bpm ?? '—'}</strong></div><div><span>KEY</span><strong>{selectedTrackInfo.key}</strong></div><div><span>TIME</span><strong>{formatDuration(selectedTrack.durationSeconds)}</strong></div><div><span>GENRE</span><strong>{selectedTrack.genre ?? '—'}</strong></div></div>
             <div className="rating-row"><span className="inspector-label">RATING</span><div className="stars" aria-label={`Rating ${rating} out of 5`}>{[1, 2, 3, 4, 5].map((star) => <button type="button" className={star <= rating ? 'star star-on' : 'star'} key={star} onClick={() => setRating(star)} aria-label={`Rate ${star} out of 5`}>★</button>)}</div></div>
             <div className="inspector-tags"><div className="inspector-label-row"><span className="inspector-label">TAGS</span><button type="button" className="text-button" onClick={() => setTags((current) => current.includes('new') ? current : [...current, 'new'])}>＋ Add tag</button></div><div className="inspector-tag-list">{tags.map((tag) => <span className="inspector-tag" key={tag}>{tag}<button type="button" aria-label={`Remove ${tag} tag`} onClick={() => setTags((current) => current.filter((item) => item !== tag))}>×</button></span>)}</div></div>
-            <RoutingMatrix routes={routes} selectedTrackId={selectedTrack.trackId} selectedTrackLabel={displayTitle(selectedTrack)} activeRouteId={activeRouteId} recentRouteId={recentRouteId} blockedRouteId={blockedRouteId} draggingTrackId={draggingTrackId} disabled={bridgeStatus !== 'ready' || loading} onRoute={(routeId, trackId) => void handleMove(routeId, trackId)} onConfigure={() => setRouteSettingsOpen((open) => !open)} />
+            <RoutingMatrix routes={routes} selectedTrackId={selectedTrack.trackId} selectedTrackLabel={displayTitle(selectedTrack)} activeRouteId={activeRouteId} recentRouteId={recentRouteId} blockedRouteId={blockedRouteId} draggingTrackId={draggingTrackId} disabled={bridgeStatus !== 'ready'} onRoute={(routeId, trackId) => handleMove(routeId, trackId)} onConfigure={() => setRouteSettingsOpen((open) => !open)} />
             {routeSettingsOpen && <RouteSettings routes={routes} disabled={bridgeStatus !== 'ready' || loading} onRoutesChanged={setRoutes} />}
           </div>}
           {selectedTrack && inspectorTab === 'files' && <div className="inspector-content inspector-file-view"><span className="inspector-label">SOURCE FILE</span><code>{selectedTrack.sourcePath || selectedTrack.relativePath}</code><span className="inspector-label">RELATIVE PATH</span><code>{selectedTrack.relativePath}</code><p>File paths are read from the local bridge and remain authoritative in the native desktop shell.</p></div>}
@@ -409,7 +469,7 @@ function App() {
         </aside>
       </section>
 
-      <AudioControls key={selectedTrack?.trackId ?? 'empty-player'} track={selectedTrack} audioRef={audioRef} playing={playing} preview={previewMode} onTogglePlay={togglePlayback} onPlay={() => setPlaying(true)} onPause={() => setPlaying(false)} onEnded={() => setPlaying(false)} />
+      <AudioControls key={selectedTrack?.trackId ?? 'empty-player'} track={selectedTrack} audioRef={audioRef} playing={playing} preview={previewMode} onTogglePlay={togglePlayback} onPlay={() => setPlaying(true)} onPause={() => setPlaying(false)} onEnded={() => setPlaying(false)} onReadyToPlay={playPendingSelection} />
     </AppShell>
   )
 }
