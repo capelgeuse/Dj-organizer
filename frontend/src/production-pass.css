@@ -1,0 +1,269 @@
+/* Desktop production pass: preserve density while restoring 4K legibility. */
+html {
+  font-size: 16px;
+}
+
+.app-shell {
+  font-variant-numeric: tabular-nums;
+}
+
+.workspace {
+  grid-template-columns: clamp(218px, 12vw, 250px) minmax(0, 1fr) clamp(388px, 22vw, 440px);
+}
+
+/* Global hierarchy: no operational copy should render as 8px microtext. */
+.eyebrow,
+.root-control-label,
+.breadcrumb,
+.table-head,
+.inspector-label,
+.metadata-grid span,
+.routing-selection,
+.queue-footer,
+.sidebar-footer,
+.filter-strip,
+.route-configure-button,
+.player-time,
+.player-cue,
+.player-add {
+  font-size: 0.625rem;
+}
+
+.brand-name { font-size: 1rem; }
+.topbar-breadcrumb { font-size: 0.84rem; }
+.root-control-value { font-size: 0.75rem; }
+.root-control button { font-size: 0.66rem; }
+.status-chip { font-size: 0.64rem; }
+
+.sidebar-link {
+  min-height: 36px;
+  font-size: 0.8rem;
+}
+.sidebar-link strong { font-size: 0.66rem; }
+.tag-link { font-size: 0.73rem; }
+.sidebar-footer { line-height: 1.35; }
+
+.queue-title-row h1 { font-size: 1.58rem; }
+.queue-count { font-size: 0.66rem; }
+.queue-subtitle { font-size: 0.75rem; }
+.toolbar-button {
+  height: 31px;
+  font-size: 0.7rem;
+}
+.search-box {
+  height: 31px;
+}
+.search-box input { font-size: 0.72rem; }
+.filter-strip button { font-size: 0.68rem; }
+.table-head {
+  min-height: 35px;
+  letter-spacing: 0.085em;
+}
+
+.track-row {
+  min-height: 68px;
+}
+.track-row-number { font-size: 0.66rem; }
+.track-copy strong { font-size: 0.82rem; }
+.track-copy small { font-size: 0.62rem; }
+.track-artist-cell { font-size: 0.73rem; }
+.track-data { font-size: 0.66rem; }
+.track-added { font-size: 0.61rem; }
+.track-row-compact { min-height: 54px; }
+.track-row-compact .track-copy strong { font-size: 0.75rem; }
+.queue-footer { min-height: 32px; }
+
+.inspector-tabs {
+  height: 51px;
+}
+.inspector-tab { font-size: 0.76rem; }
+.inspector-content {
+  gap: 19px;
+  padding: 21px 22px 28px;
+}
+.inspector-cover { height: 220px; }
+.inspector-track-title h2 { font-size: 1.17rem; }
+.inspector-track-title p { font-size: 0.81rem; }
+.inspector-track-title span { font-size: 0.64rem; }
+.metadata-grid div {
+  gap: 6px;
+  padding: 12px 8px;
+}
+.metadata-grid strong { font-size: 0.75rem; }
+.star { font-size: 1.05rem; }
+.text-button { font-size: 0.64rem; }
+.inspector-tag {
+  padding: 6px 7px 6px 9px;
+  font-size: 0.63rem;
+}
+.inspector-file-view code { font-size: 0.65rem; }
+.inspector-file-view p { font-size: 0.73rem; }
+.inspector-notes textarea { font-size: 0.76rem; }
+.inspector-notes small { font-size: 0.68rem; }
+
+/* Routing Matrix: an instrument panel, not nine web CTAs. */
+.routing-matrix {
+  gap: 12px;
+  padding-top: 18px;
+}
+.routing-matrix-heading h3 {
+  font-size: 0.96rem;
+  letter-spacing: -0.015em;
+}
+.routing-selection {
+  font-weight: 700;
+  letter-spacing: 0.11em;
+}
+.routing-matrix-copy {
+  color: #758087;
+  font-size: 0.63rem;
+  line-height: 1.5;
+}
+.routing-matrix-grid {
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-bottom: 0;
+  background: #0f1214;
+}
+.routing-slot {
+  min-height: 92px;
+  grid-template-columns: 43px minmax(0, 1fr);
+  gap: 10px;
+  padding: 14px 11px;
+}
+.routing-slot-number {
+  color: #505b62;
+  font-size: 2.38rem;
+  line-height: 0.86;
+}
+.routing-slot-copy {
+  gap: 7px;
+}
+.routing-slot-route {
+  color: #818b90;
+  font-size: 0.64rem;
+  letter-spacing: 0.075em;
+}
+.routing-slot-copy strong {
+  color: #e6e5df;
+  font-size: 0.84rem;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+}
+.routing-slot:not(:disabled):hover,
+.routing-slot-drop-target {
+  background: rgba(200, 164, 92, 0.075);
+}
+.routing-slot:not(:disabled):focus-visible {
+  outline: 1px solid var(--accent-bright);
+  outline-offset: -2px;
+  box-shadow: inset 0 -2px var(--accent-bright);
+}
+.routing-slot-active {
+  background: rgba(200, 164, 92, 0.07);
+  box-shadow: inset 3px 0 var(--accent-bright);
+}
+.routing-slot-recent {
+  animation: route-confirmation 620ms ease-out;
+  background: rgba(200, 164, 92, 0.1);
+}
+.routing-slot-preview-pulse {
+  animation: route-confirmation 620ms ease-out;
+  background: rgba(200, 164, 92, 0.1);
+  color: var(--accent-bright);
+}
+.routing-slot-preview-pulse .routing-slot-number,
+.routing-slot-preview-pulse .routing-slot-route {
+  color: var(--accent-bright);
+}
+.app-shell[data-preview-mode="true"] .routing-selection {
+  font-size: 0;
+}
+.app-shell[data-preview-mode="true"] .routing-selection::after {
+  color: var(--accent-bright);
+  content: "PREVIEW";
+  font-size: 0.625rem;
+}
+.routing-holding {
+  min-height: 70px;
+  grid-template-columns: 43px minmax(0, 1fr);
+  gap: 10px;
+  border-color: #595546;
+  padding: 12px 11px;
+}
+.routing-holding .routing-slot-copy strong { font-size: 0.78rem; }
+.routing-matrix-footer {
+  min-height: 29px;
+  justify-content: space-between;
+  gap: 14px;
+  line-height: 1.35;
+}
+.routing-matrix-footer::before {
+  content: "Routes stay visible when idle";
+}
+.app-shell[data-preview-mode="true"] .routing-matrix-footer::before {
+  content: "Preview feedback only · no files move";
+}
+.route-configure-button {
+  flex: 0 0 auto;
+  padding: 7px 9px;
+}
+
+.audio-controls {
+  height: 80px;
+  min-height: 80px;
+}
+.player-track-copy strong { font-size: 0.76rem; }
+.player-track-copy span { font-size: 0.65rem; }
+.player-time { font-size: 0.65rem; }
+.player-cue,
+.player-add { font-size: 0.64rem; }
+.error-banner,
+.success-banner { font-size: 0.7rem; }
+.success-banner button { font-size: 0.66rem; }
+
+@keyframes route-confirmation {
+  0% { background: rgba(227, 189, 112, 0.22); }
+  100% { background: rgba(200, 164, 92, 0.08); }
+}
+
+@media (min-width: 1800px) {
+  html { font-size: 17px; }
+  .workspace { grid-template-columns: 238px minmax(0, 1fr) 420px; }
+  .inspector-cover { height: 235px; }
+}
+
+@media (min-width: 2400px) {
+  html { font-size: 18px; }
+  .workspace { grid-template-columns: 250px minmax(0, 1fr) 440px; }
+  .track-row { min-height: 70px; }
+}
+
+@media (max-width: 1160px) {
+  html { font-size: 16px; }
+  .workspace { grid-template-columns: 190px minmax(0, 1fr) 340px; }
+  .inspector-content { padding-right: 17px; padding-left: 17px; }
+  .routing-slot {
+    min-height: 84px;
+    grid-template-columns: 36px minmax(0, 1fr);
+    gap: 7px;
+    padding: 11px 8px;
+  }
+  .routing-slot-number { font-size: 2rem; }
+  .routing-slot-route { font-size: 0.58rem; }
+  .routing-slot-copy strong { font-size: 0.75rem; }
+}
+
+@media (max-width: 900px) {
+  .workspace { grid-template-columns: minmax(0, 1fr) 330px; }
+}
+
+.sr-only {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  clip-path: inset(50%) !important;
+  white-space: nowrap !important;
+}
