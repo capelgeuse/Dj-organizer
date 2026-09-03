@@ -1,2 +1,0 @@
-# Build-only dependencies for the packaged Python sidecar.
-pyinstaller>=6.0,<7
