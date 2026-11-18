@@ -23,6 +23,10 @@ frontend/src-tauri/Cargo.lock
 frontend/src-tauri/resources/backend_bridge.exe
 frontend/src-tauri/pyinstaller-build/
 backend_bridge.spec
+dist/
+build/
+frontend/src-tauri/binaries/
+frontend/src-tauri/gen/
 
 # Local editor and OS files
 .vscode/
