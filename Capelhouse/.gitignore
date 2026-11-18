@@ -1,0 +1,12 @@
+# Archivos personales y resultados locales de CapelHouse
+configuracion_dj.json
+library.json
+library.json.*
+*.bak
+*.bak.*
+*.bak.db
+qa/
+prueba_demo/
+releases/
+CapelHouse-*-Windows.zip
+__pycache__/
