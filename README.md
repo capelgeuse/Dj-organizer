@@ -1,5 +1,19 @@
 # CapelHouse
 
+## CapelHouse 2.1: organizador DJ para Windows
+
+La aplicación de escritorio en [`Capelhouse/`](Capelhouse/) permite escuchar
+canciones, organizarlas por género y asignar estrellas y colores independientes.
+Incluye conexión con Rekordbox y una comprobación del estado de cada pista.
+
+Para ejecutarla desde el código, instala Python 3.11 o posterior, abre
+`Capelhouse/Instalar_CapelHouse.bat` y después `Capelhouse/Abrir_CapelHouse.bat`.
+Consulta la [guía de CapelHouse 2.1](Capelhouse/README.md) para las instrucciones
+de Rekordbox, seguridad de la biblioteca y empaquetado.
+
+La interfaz React/Tauri descrita a continuación es una línea de desarrollo
+separada; la versión 2.1 indicada arriba usa la aplicación Qt de `Capelhouse/`.
+
 Local Windows desktop music organizer.
 
 The modernization uses React + Vite inside Tauri while keeping Python as the

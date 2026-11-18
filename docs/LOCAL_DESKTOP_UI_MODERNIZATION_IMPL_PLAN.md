@@ -107,9 +107,8 @@ React consumes Layer A DTOs and never recreates its rules locally.
 - Configuration is JSON. There are three competing locations:
   `configuracion_dj.json`, `Capelhouse/configuracion_dj.json`, and
   `configuracion_dj_punto_cero.json`.
-- `Capelhouse/configuracion_dj.json` contains personal paths from another
-  machine (`C:\Users\LENOVO` and `E:\Progressive House`). It is not a portable
-  default and must not be treated as a valid current library.
+- Historical versions of `Capelhouse/configuracion_dj.json` contained personal
+  paths. Use the empty example configuration rather than a personal library.
 - Production configuration should move to a per-user Windows location such as
   `%APPDATA%\\CapelHouse\\config.json`; source-tree JSON remains an import
   fixture/compatibility input.
@@ -1347,7 +1346,7 @@ claim localhost deployment; the product is a packaged desktop executable.
 | Python sidecar orphaned on Windows close | High | Tauri-owned lifecycle, bounded shutdown and process-tree test |
 | BPM analysis freezes UI | High | Backend job/progress events, metadata-first, cancellation before mutation |
 | Large library overwhelms React | High | Backend paging/incremental scan, lazy artwork and virtualization |
-| Config from LENOVO/E drive is reused | High | Per-user config migration and invalid-path state |
+| Personal configuration is reused on another computer | High | Per-user config migration and invalid-path state |
 | PyInstaller misses audio native assets | High | Dedicated sidecar spec and clean-machine codec/import tests |
 | React duplicates classification logic | High | Layer A DTOs plus Python-only validation/mutation |
 | Keyboard shortcut triggers inside dialogs | Medium | `event.code` map with editable-target suppression tests |

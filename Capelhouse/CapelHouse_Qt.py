@@ -1,253 +1,962 @@
-"""Interfaz Qt clara para organizar canciones con el flujo de Texto_punto_cero."""
-import json, shutil, sys
+"""CapelHouse — preparación musical por género, estrellas y color."""
+import argparse
+import json
+import logging
+import math
+import os
+import subprocess
+import sys
 from pathlib import Path
-from PySide6.QtCore import Qt, QTimer, QSize
-from PySide6.QtGui import QImage, QKeyEvent, QPixmap, QIcon, QFontDatabase
-from PySide6.QtWidgets import (QApplication, QComboBox, QFileDialog, QFrame, QGroupBox,
-    QHBoxLayout, QInputDialog, QLabel, QListWidget, QListWidgetItem, QMainWindow,
-    QMessageBox, QPushButton, QScrollArea, QSlider, QSplitter, QVBoxLayout, QWidget,
-    QLineEdit, QTextEdit)
-import pygame
-from mutagen import File as open_metadata
 
-AUDIO = {".mp3", ".wav", ".ogg", ".flac", ".m4a", ".aac"}
-CONFIG = Path(__file__).with_name("configuracion_dj.json")
-LOGO = Path(__file__).with_name("logo.png")
-BRAND_FONT = Path(__file__).with_name("Mr_Dafoe") / "MrDafoe-Regular.ttf"
-BYLINE_FONT = Path(__file__).with_name("Barlow_Condensed,Mr_Dafoe") / "Barlow_Condensed" / "BarlowCondensed-BlackItalic.ttf"
+from mutagen import File as audio_metadata
+from PySide6.QtCore import QEvent, QPointF, QSignalBlocker, QThreadPool, QTimer, Qt, QUrl
+from PySide6.QtGui import QAction, QColor, QDesktopServices, QFontDatabase, QIcon, QKeyEvent, QPainter, QPolygonF, QPixmap
+from PySide6.QtMultimedia import QAudioOutput, QMediaPlayer
+from PySide6.QtWidgets import (
+    QApplication, QCheckBox, QComboBox, QFileDialog, QGroupBox, QHBoxLayout,
+    QHeaderView, QInputDialog, QLabel, QLineEdit, QMainWindow, QMessageBox,
+    QPushButton, QScrollArea, QSlider, QSplitter, QTabWidget, QTableWidget,
+    QTableWidgetItem, QVBoxLayout, QWidget, QAbstractItemView, QSizePolicy, QDialog,
+)
+
+from library import Library, COLORS
+from rekordbox_export import export_library, publish_library
+from rekordbox_bridge import default_bridge_dir, inspect_connection, configure_connection, inspect_tracks
+from rekordbox_sync import apply_classification
+from tasks import Task
+
+BASE = Path(__file__).resolve().parent
+VERSION = "2.1.0"
+RB_STATES = {
+    "pending": "No importada", "not_imported": "No importada", "imported": "Pendiente de análisis",
+    "analyzing": "Analizando", "ready": "Lista", "metadata_mismatch": "Revisar clasificación",
+    "missing": "Archivo no localizado", "unverifiable": "Sin verificar",
+}
+
+
+def config_location():
+    user_config = Path(os.environ.get("LOCALAPPDATA", Path.home())) / "CapelHouse" / "configuracion_dj.json"
+    if getattr(sys, "frozen", False) or user_config.with_name("library.json").exists():
+        return user_config
+    return BASE / "configuracion_dj.json"
+
+
+def clock(milliseconds):
+    seconds = max(0, int(milliseconds // 1000))
+    return f"{seconds // 60}:{seconds % 60:02}"
+
+
+def star_icon(filled):
+    pixmap = QPixmap(28, 28)
+    pixmap.fill(Qt.transparent)
+    painter = QPainter(pixmap)
+    painter.setRenderHint(QPainter.Antialiasing)
+    painter.setPen(QColor("#e6b84a"))
+    painter.setBrush(QColor("#e6b84a") if filled else Qt.NoBrush)
+    points = [QPointF(14 + (12 if i % 2 == 0 else 5) * math.sin(i * math.pi / 5),
+                      14 - (12 if i % 2 == 0 else 5) * math.cos(i * math.pi / 5)) for i in range(10)]
+    painter.drawPolygon(QPolygonF(points))
+    painter.end()
+    return QIcon(pixmap)
+
 
 class App(QMainWindow):
-    def __init__(self):
-        super().__init__(); self.setWindowTitle("CapelHouse · Organizador DJ"); self.resize(1440, 900); self.setMinimumSize(1000, 650); self.statusBar().setSizeGripEnabled(True)
-        self.cfg = self.read_config(); self.input_path=Path(self.cfg.get("entrada", "")); self.library_path=Path(self.cfg.get("biblioteca", "")); self.categories=self.cfg.get("categorias", ["Inicio", "Medio", "Ponchadas"]); self.genres=self.cfg.get("generos", []); self.reviewed=self.cfg.get("revisadas", []); self.omitted=self.cfg.get("omitidas", []); self.tracks=[]; self.current=None; self.playing=False; self.paused=False; self.position=0; self.duration=0; self.ignore_slider=False
-        self.audio_ready=False
-        self.dark_mode=False; self.brand_family="Mr Dafoe"; font_id=QFontDatabase.addApplicationFont(str(BRAND_FONT)) if BRAND_FONT.is_file() else -1; families=QFontDatabase.applicationFontFamilies(font_id) if font_id>=0 else []; self.brand_family=families[0] if families else self.brand_family; self.build_ui(); self.size_combo.setMinimumWidth(135); self.genre_combo.setMinimumWidth(150); self.genre_combo.setPlaceholderText("Sin géneros — pulsa Editar"); self.reviewed_list.setIconSize(QSize(48,48)); self.reviewed_list.setSpacing(5); self.reviewed_list.setUniformItemSizes(True); self.volume=QSlider(Qt.Horizontal); self.volume.setMinimumWidth(180); self.volume.setRange(0,100); self.volume.setValue(80); self.volume.valueChanged.connect(self.set_volume); self.volume_label=QLabel("Volumen 80%"); self.category_box.insertWidget(0,self.volume_label); self.category_box.insertWidget(1,self.volume); self.apply_theme(); self.load_tracks(); QTimer.singleShot(0,self.balance_split); QApplication.instance().installEventFilter(self); self.timer=QTimer(self); self.timer.timeout.connect(self.update_progress); self.timer.start(400)
-    def resizeEvent(self,event):
-        super().resizeEvent(event)
-        if hasattr(self,"main_split"): self.balance_split()
-    def balance_split(self):
-        if hasattr(self,"main_split") and self.main_split.count()==3:
-            width=max(1,self.main_split.width()); self.main_split.setSizes([int(width*.36),int(width*.20),int(width*.44)])
-    def set_volume(self,value):
-        self.volume_label.setText(f"Volumen {value}%")
-        if self.audio_ready:
-            pygame.mixer.music.set_volume(value/100)
-    def show_message(self,icon,title,text):
-        box=QMessageBox(self); box.setIcon(icon); box.setWindowTitle(title); box.setText(text)
-        if self.dark_mode:
-            box.setStyleSheet("QMessageBox{background:#181b1f;color:#f4f3ee} QMessageBox QLabel{color:#f4f3ee;min-width:280px} QMessageBox QPushButton{background:#1e2227;color:#f4f3ee;border:1px solid #2a2f35;border-radius:7px;padding:7px 16px} QMessageBox QPushButton:hover{background:#2c2920;border-color:#e6b84a}")
-        else:
-            box.setStyleSheet("QMessageBox{background:#ffffff;color:#17191c} QMessageBox QLabel{color:#17191c;min-width:280px} QMessageBox QPushButton{background:#ffffff;color:#17191c;border:1px solid #cbc8c0;border-radius:7px;padding:7px 16px} QMessageBox QPushButton:hover{background:#f7edcf;border-color:#d8a933}")
-        box.exec()
-    def relocate_controls(self):
-        if getattr(self,"controls_relocated",False): return
-        self.controls_relocated=True
-        self.play.setObjectName("playButton"); self.progress.setObjectName("timeline"); self.list.setObjectName("pendingList"); self.reviewed_list.setObjectName("reviewedList")
-        if self.category_box.count()>=2:
-            self.category_box.takeAt(0); self.category_box.takeAt(0)
-        heading=QLabel("CLASIFICACIÓN"); heading.setObjectName("sectionHeading"); self.category_box.insertWidget(0,heading)
-        player_layout=self.volume.parentWidget().layout() if self.volume.parentWidget() else None
-        if player_layout:
-            player_layout.insertWidget(5,self.volume_label); player_layout.insertWidget(6,self.volume)
-    def read_config(self):
-        try: return json.loads(CONFIG.read_text(encoding="utf-8"))
-        except (OSError,json.JSONDecodeError): return {}
-    def save_config(self):
-        self.cfg.update(entrada=str(self.input_path), biblioteca=str(self.library_path), categorias=self.categories, generos=self.genres, revisadas=self.reviewed, omitidas=self.omitted); CONFIG.write_text(json.dumps(self.cfg,ensure_ascii=False,indent=2),encoding="utf-8")
-    def build_ui(self):
-        root=QWidget(); self.setCentralWidget(root); outer=QVBoxLayout(root); outer.setContentsMargins(28,24,28,18); outer.setSpacing(14)
-        title=QLabel("CAPELHOUSE\nOrganiza tu música con orden"); title.setObjectName("title"); outer.addWidget(title); sub=QLabel("Elige una canción, escúchala y clasifícala. Los originales se conservan."); sub.setObjectName("muted"); outer.addWidget(sub)
-        locations=QGroupBox("Ubicaciones"); loc=QHBoxLayout(locations); self.input_label=QLabel(); self.library_label=QLabel(); b=QPushButton("Entrada"); b.clicked.connect(self.choose_input); d=QPushButton("Destino"); d.clicked.connect(self.choose_library); loc.addWidget(b); loc.addWidget(self.input_label,1); loc.addWidget(d); loc.addWidget(self.library_label,1); loc.addWidget(QLabel("Tamaño:")); self.size_combo=QComboBox(); self.size_combo.addItems(["1440 × 900", "1920 × 1080", "1366 × 768"]); self.size_combo.currentIndexChanged.connect(self.change_size); loc.addWidget(self.size_combo); outer.addWidget(locations)
-        theme=QPushButton("Modo noche"); theme.clicked.connect(self.toggle_theme); loc.addWidget(theme)
-        split=QSplitter(Qt.Horizontal); self.main_split=split; outer.addWidget(split,1); split.setChildrenCollapsible(False); split.setStretchFactor(0,3); split.setStretchFactor(1,2); split.setStretchFactor(2,5)
-        library=QGroupBox("Canciones por revisar"); lv=QVBoxLayout(library); self.list=QListWidget(); self.list.currentRowChanged.connect(self.select); self.list.setToolTip("Selecciona una canción y pulsa Supr para quitarla de esta lista"); lv.addWidget(self.list); actions=QHBoxLayout(); remove=QPushButton("Quitar seleccionada"); remove.setToolTip("La canción no se borrará del disco"); remove.clicked.connect(self.omit_current); update=QPushButton("Actualizar lista"); update.clicked.connect(self.load_tracks); actions.addWidget(remove); actions.addWidget(update); lv.addLayout(actions); split.addWidget(library)
-        reviewed_box=QGroupBox("Canciones revisadas"); rv=QVBoxLayout(reviewed_box); self.reviewed_list=QListWidget(); self.reviewed_list.setWordWrap(True); rv.addWidget(self.reviewed_list); split.addWidget(reviewed_box)
-        inspector=QGroupBox("Reproductor y clasificación"); iv=QVBoxLayout(inspector); scroll=QScrollArea(); scroll.setWidgetResizable(True); panel=QWidget(); pv=QVBoxLayout(panel); self.cover=QLabel("♪"); self.cover.setObjectName("cover"); self.cover.setAlignment(Qt.AlignCenter); pv.addWidget(self.cover); self.name=QLabel("Selecciona una canción"); self.name.setObjectName("song"); self.name.setWordWrap(True); pv.addWidget(self.name); self.info=QLabel("BPM -- · Duración --:--"); pv.addWidget(self.info); self.play=QPushButton("▶  Reproducir"); self.play.clicked.connect(self.toggle); pv.addWidget(self.play); jump=QHBoxLayout(); forw=QPushButton("+5 s"); forw.clicked.connect(lambda:self.seek(5)); back=QPushButton("−5 s"); back.clicked.connect(lambda:self.seek(-5)); jump.addWidget(back); jump.addWidget(forw); pv.addLayout(jump); self.progress=QSlider(Qt.Horizontal); self.progress.setRange(0,1); self.progress.sliderReleased.connect(self.seek_slider); pv.addWidget(self.progress); genre=QHBoxLayout(); genre.addWidget(QLabel("Género")); self.genre_combo=QComboBox(); self.genre_combo.addItems(self.genres); genre.addWidget(self.genre_combo,1); edit_genre=QPushButton("Editar"); edit_genre.clicked.connect(self.manage_genres); genre.addWidget(edit_genre); pv.addLayout(genre); edit_cat=QPushButton("Administrar categorías"); edit_cat.clicked.connect(self.manage_categories); pv.addWidget(edit_cat); self.category_box=QVBoxLayout(); pv.addLayout(self.category_box); pv.addStretch(); scroll.setWidget(panel); iv.addWidget(scroll); split.addWidget(inspector); split.setSizes([700,420]); self.refresh_labels(); self.render_categories(); self.setStyleSheet(self.styles())
-        layout=self.centralWidget().layout(); layout.itemAt(0).widget().hide(); layout.itemAt(1).widget().hide(); header=QHBoxLayout(); self.logo=QLabel(); self.logo.setFixedSize(120,120); self.logo.setAlignment(Qt.AlignCenter); header.addWidget(self.logo); head_text=QVBoxLayout(); self.brand=QLabel("Capelhouse"); self.brand.setObjectName("brand"); self.brand.setStyleSheet("font-family:'"+self.brand_family+"';font-size:40px;font-weight:400;color:#172027"); head_text.addWidget(self.brand); tagline=QLabel("By Capelgeuse"); tagline.setObjectName("byline"); head_text.addWidget(tagline); header.addLayout(head_text,1); layout.insertLayout(0,header); self.logo.setPixmap(QPixmap(str(LOGO)).scaled(112,112,Qt.KeepAspectRatio,Qt.SmoothTransformation)) if LOGO.is_file() else self.logo.setText("♪")
-    def styles(self): return "QMainWindow{background:#f3f5f7} QLabel{color:#111820} QLabel#brand{font-family:'Mr Dafoe';font-size:38px;font-weight:400;color:#172027} QLabel#title{font-size:27px;font-weight:700;color:#172027} QLabel#muted{color:#66737d} QGroupBox{background:#fff;border:1px solid #dce2e7;border-radius:10px;margin-top:10px;padding:14px;font-weight:600} QGroupBox QLabel{color:#111820} QGroupBox QLabel#song{color:#111820;background:transparent;font-size:17px;font-weight:600} QScrollArea{background:#fff;border:0} QScrollArea QWidget{background:#fff} QSplitter::handle{background:#dce2e7;width:2px} QComboBox{min-height:28px;padding:3px 8px;border:1px solid #cbd3da;border-radius:6px;background:#fff;color:#111820} QComboBox QAbstractItemView{background:#fff;color:#111820;selection-background-color:#e76552;selection-color:#fff} QSlider::groove:horizontal{height:6px;background:#d5dce1;border-radius:3px} QSlider::handle:horizontal{width:14px;height:14px;margin:-4px 0;border-radius:7px;background:#e76552} QScrollBar:vertical{width:10px;background:transparent;margin:2px} QScrollBar::handle:vertical{background:#c3cbd1;min-height:30px;border-radius:5px} QScrollBar::add-line:vertical,QScrollBar::sub-line:vertical{height:0} QPushButton{background:#fff;border:1px solid #cbd3da;border-radius:7px;padding:9px 13px} QPushButton:hover{background:#fff0ec;border-color:#e76552} QListWidget{background:#fbfcfd;border:0;padding:7px} QListWidget::item{background:#ffffff;border:1px solid #e1e6ea;border-radius:8px;margin:3px 2px;padding:10px 8px} QListWidget::item:hover{background:#fff7f4;border-color:#efb1a5} QListWidget::item:selected{background:#e76552;color:white;border-color:#e76552} QLabel#cover{background:#29313a;color:white;min-height:110px;max-height:135px;font-size:46px;border-radius:8px}"
-    def configure_logo(self):
-        barlow_id=QFontDatabase.addApplicationFont(str(BYLINE_FONT)) if BYLINE_FONT.is_file() else -1; barlow_families=QFontDatabase.applicationFontFamilies(barlow_id) if barlow_id>=0 else []; byline_family=barlow_families[0] if barlow_families else "Barlow Condensed"
-        if hasattr(self,"brand") and self.brand.parentWidget() and self.brand.parentWidget().layout(): self.brand.parentWidget().layout().setSpacing(-4); self.brand.parentWidget().layout().setContentsMargins(0,0,0,0); byline=self.brand.parentWidget().layout().itemAt(1).widget(); byline.setText("By Capelgeuse"); byline.setObjectName("byline"); byline.setStyleSheet("font-family:'"+byline_family+"';font-size:20px;font-weight:900;color:"+ ("#f4f1eb" if self.dark_mode else "#172027")); byline.setAlignment(Qt.AlignLeft|Qt.AlignTop); self.brand.parentWidget().layout().itemAt(2).widget().hide()
-        if not LOGO.is_file() or not hasattr(self,"logo"): return
-        image=QImage(str(LOGO))
-        if image.isNull(): return
-        side=min(image.width(),image.height()); full=QPixmap.fromImage(image).scaled(112,112,Qt.KeepAspectRatio,Qt.SmoothTransformation); self.logo.setFixedSize(120,120); self.logo.setPixmap(full); face=image.copy(int(image.width()*.35),int(image.height()*.16),int(side*.30),int(side*.30)); face_icon=QPixmap.fromImage(face).scaled(256,256,Qt.KeepAspectRatio,Qt.SmoothTransformation); self.setWindowIcon(QIcon(face_icon))
-    def apply_theme(self):
-        self.relocate_controls()
-        self.configure_logo()
-        if self.dark_mode:
-            self.setStyleSheet(self.styles()+"QMainWindow{background:#111315} QLabel{color:#f4f3ee} QLabel#title{color:#f4f3ee;font-family:'Segoe UI';font-size:24px;font-weight:600} QLabel#muted{color:#979ea6;font-family:'Segoe UI'} QLabel#sectionHeading{color:#e6b84a;font-size:12px;font-weight:700;letter-spacing:1px} QGroupBox{background:#181b1f;color:#f4f3ee;border-color:#2a2f35} QGroupBox QLabel{color:#f4f3ee} QGroupBox QLabel#song{color:#f4f3ee;background:transparent} QScrollArea{background:#181b1f} QScrollArea QWidget{background:#181b1f} QSplitter::handle{background:#2a2f35;width:2px} QComboBox{background:#1e2227;color:#f4f3ee;border-color:#2a2f35} QComboBox QAbstractItemView{background:#1e2227;color:#f4f3ee;selection-background-color:#e6b84a;selection-color:#111315} QPushButton{background:#1e2227;color:#f4f3ee;border-color:#2a2f35} QPushButton:hover{background:#2c2920;border-color:#e6b84a;color:#f0c75e} QListWidget{background:#1e2227;color:#f4f3ee} QListWidget::item{background:#1e2227;color:#f4f3ee;border:0;border-left:3px solid transparent;margin:2px 0;padding:10px 8px} QListWidget::item:hover{background:#252a2f} QListWidget::item:selected{background:#2b3029;color:#f4f3ee;border-left:3px solid #e6b84a} #reviewedList::item{border:1px solid #2a2f35;border-radius:8px;margin:4px 2px;padding:8px} #reviewedList::item:selected{border-color:#e6b84a} QComboBox,QSlider{color:#f4f3ee} QPushButton#playButton{background:#e6b84a;color:#111315;border:0;border-radius:28px;font-size:16px;font-weight:700;min-height:52px} QPushButton#playButton:hover{background:#f0c75e} QPushButton#categoryButton{background:#1e2227;color:#f4f3ee;border:1px solid #2a2f35;border-radius:8px;min-height:38px;font-weight:600} QPushButton#categoryButton:hover{background:#2c2920;color:#f0c75e;border-color:#e6b84a}")
-            self.cover.setStyleSheet("background:#20252a;color:white;border-radius:8px;min-height:220px;max-height:280px;font-size:64px"); self.name.setStyleSheet("color:#f4f1eb;font-size:20px;font-weight:600"); self.info.setStyleSheet("color:#979ea6"); self.brand.setStyleSheet("font-family:'"+self.brand_family+"';font-size:40px;font-weight:400;color:#f4f1eb")
-        else:
-            self.setStyleSheet(self.styles()+"QMainWindow{background:#f2f1ec} QLabel{color:#17191c} QLabel#title{color:#17191c;font-family:'Segoe UI';font-size:24px;font-weight:600} QLabel#muted{color:#73787e;font-family:'Segoe UI'} QLabel#sectionHeading{color:#b78b18;font-size:12px;font-weight:700;letter-spacing:1px} QGroupBox{background:#ffffff;color:#17191c;border-color:#d8d5cd} QGroupBox QLabel{color:#17191c} QGroupBox QLabel#song{color:#17191c;background:transparent} QScrollArea{background:#ffffff} QScrollArea QWidget{background:#ffffff} QSplitter::handle{background:#d8d5cd;width:2px} QComboBox{background:#ffffff;color:#17191c;border-color:#cbc8c0} QComboBox QAbstractItemView{background:#ffffff;color:#17191c;selection-background-color:#d8a933;selection-color:#17191c} QPushButton{background:#ffffff;color:#17191c;border-color:#cbc8c0} QPushButton:hover{background:#f7edcf;color:#6f5310;border-color:#d8a933} QListWidget{background:#faf9f5;color:#17191c} QListWidget::item{background:#ffffff;color:#17191c;border:0;border-left:3px solid transparent;margin:2px 0;padding:10px 8px} QListWidget::item:hover{background:#f7f4ea} QListWidget::item:selected{background:#f7edcf;color:#17191c;border-left:3px solid #d8a933} #reviewedList::item{border:1px solid #dedbd3;border-radius:8px;margin:4px 2px;padding:8px} #reviewedList::item:selected{border-color:#d8a933} QPushButton#playButton{background:#d8a933;color:#17191c;border:0;border-radius:28px;font-size:16px;font-weight:700;min-height:52px} QPushButton#playButton:hover{background:#e4ba49} QPushButton#categoryButton{background:#ffffff;color:#17191c;border:1px solid #cbc8c0;border-radius:8px;min-height:38px;font-weight:600} QPushButton#categoryButton:hover{background:#f7edcf;color:#6f5310;border-color:#d8a933}")
-            self.cover.setStyleSheet("background:#3b4145;color:#ffffff;border-radius:8px;min-height:220px;max-height:280px;font-size:64px"); self.name.setStyleSheet("color:#17191c;font-size:20px;font-weight:600"); self.info.setStyleSheet("color:#73787e"); self.brand.setStyleSheet("font-family:'"+self.brand_family+"';font-size:40px;font-weight:400;color:#172027")
-    def toggle_theme(self):
-        self.dark_mode=not self.dark_mode; self.apply_theme()
-        for button in self.findChildren(QPushButton):
-            if button.text() in {"Modo noche","Modo día"}: button.setText("Modo día" if self.dark_mode else "Modo noche")
-    def refresh_labels(self):
-        if not hasattr(self,"status"):
-            self.status=QLabel("Atajos: ↑ ↓ seleccionar · ← → mover 5 s · Espacio reproducir/pausar · 1, 2, 3… clasificar"); self.status.setObjectName("muted"); self.centralWidget().layout().addWidget(self.status)
-        self.input_label.setText(str(self.input_path) if self.input_path else "Sin seleccionar"); self.library_label.setText(str(self.library_path) if self.library_path else "Sin seleccionar")
-    def choose_input(self):
-        path=QFileDialog.getExistingDirectory(self,"Selecciona carpeta de entrada");
-        if path: self.input_path=Path(path); self.save_config(); self.refresh_labels(); self.load_tracks()
-    def choose_library(self):
-        path=QFileDialog.getExistingDirectory(self,"Selecciona carpeta de destino");
-        if path: self.library_path=Path(path); self.save_config(); self.refresh_labels()
-    def change_size(self,index):
-        sizes=[(1440,900),(1920,1080),(1366,768)]
-        if 0<=index<len(sizes):
-            self.showNormal(); screen=QApplication.primaryScreen().availableGeometry(); target_w,target_h=sizes[index]; width=min(target_w,screen.width()); height=min(target_h,screen.height()); self.resize(width,height); self.move(screen.left()+max(0,(screen.width()-width)//2),screen.top()+max(0,(screen.height()-height)//2)); self.balance_split()
-    def load_tracks(self):
-        candidates=[p for p in self.input_path.rglob("*") if p.is_file() and p.suffix.lower() in AUDIO] if self.input_path.is_dir() else []
-        reviewed_paths={str(item.get("source", "")) for item in self.reviewed}; omitted_paths=set(self.omitted); self.tracks=sorted([p for p in candidates if str(p) not in reviewed_paths and str(p) not in omitted_paths and not any(part in self.categories for part in p.relative_to(self.input_path).parts[:-1])],key=lambda p:p.name.casefold()); self.list.clear(); [self.list.addItem(p.name) for p in self.tracks]; self.render_reviewed(); self.select_first()
-    def select_first(self):
-        if self.tracks and self.list.currentRow()<0:self.list.setCurrentRow(0)
-    def omit_current(self):
-        if not self.current or self.current not in self.tracks:return
-        source=str(self.current)
-        if source not in self.omitted:self.omitted.append(source)
-        self.stop(); self.current=None; self.save_config(); self.load_tracks(); self.status_message("Canción quitada de la lista; el archivo se conservó")
-    def select(self,index):
-        if index<0 or index>=len(self.tracks):return
-        self.stop(); self.current=self.tracks[index]; data=self.meta(self.current); self.duration=data["duration_seconds"]; self.position=0; self.name.setText(self.current.name); self.info.setText(f"BPM {data['bpm'] or '--'} · Duración {data['duration']}"); self.cover.setText(self.current.name[:1]); self.cover.setPixmap(QPixmap());
-        if data["cover"]: self.cover.setPixmap(QPixmap.fromImage(data["cover"]).scaled(260,260,Qt.KeepAspectRatio,Qt.SmoothTransformation))
-        self.progress.setRange(0,max(1,self.duration)); self.progress.setValue(0)
-    def meta(self,path):
-        out={"bpm":None,"duration":"--:--","duration_seconds":0,"cover":None}
-        try:
-            raw=open_metadata(str(path)); easy=open_metadata(str(path),easy=True)
-            seconds=round(getattr(getattr(raw,"info",None),"length",0) or 0); out["duration_seconds"]=seconds; out["duration"]=f"{seconds//60}:{seconds%60:02d}" if seconds else "--:--"
-            tags=getattr(easy,"tags",None) or {}
-            for key in ("bpm","tbpm","tempo"):
-                if tags.get(key):
-                    out["bpm"]=round(float(str(tags[key][0]).replace(',','.'))); break
-            pictures=list(getattr(raw,"pictures",[]) or [])
-            image_data=None
-            if pictures: image_data=pictures[0].data
-            else:
-                for value in (getattr(raw,"tags",None) or {}).values():
-                    data=getattr(value,"data",None)
-                    if isinstance(data,(bytes,bytearray)) and data:
-                        image_data=data; break
-            if image_data:
-                image=QImage();
-                if image.loadFromData(image_data): out["cover"]=image
-        except Exception: pass
-        if out["cover"] is None:
-            for stem in ("cover","folder","front",path.stem):
-                for extension in (".jpg",".jpeg",".png",".webp"):
-                    nearby=path.parent/f"{stem}{extension}"
-                    if nearby.is_file():
-                        image=QImage(str(nearby))
-                        if not image.isNull(): out["cover"]=image; return out
-        return out
-    def toggle(self):
-        if not self.current:return
-        if not self.audio_ready:
-            try: pygame.mixer.init(); pygame.mixer.music.set_volume(self.volume.value()/100); self.audio_ready=True
-            except pygame.error: self.show_message(QMessageBox.Warning,"Audio no disponible","No se pudo inicializar el dispositivo de audio."); return
-        try:
-            if self.playing and not self.paused: pygame.mixer.music.pause(); self.paused=True; self.play.setText("▶  Continuar")
-            elif self.paused: pygame.mixer.music.unpause(); self.paused=False; self.play.setText("Ⅱ  Pausar")
-            else: pygame.mixer.music.load(str(self.current)); pygame.mixer.music.play(); self.playing=True; self.paused=False; self.play.setText("Ⅱ  Pausar")
-        except pygame.error as error: self.show_message(QMessageBox.Critical,"No se pudo reproducir",str(error))
-    def stop(self):
-        if self.audio_ready: pygame.mixer.music.stop()
-        self.playing=False; self.paused=False; self.position=0
-        if hasattr(self,"play"): self.play.setText("▶  Reproducir")
-    def seek(self,seconds):
-        if not self.current:return
-        if not self.audio_ready:
-            try: pygame.mixer.init(); pygame.mixer.music.set_volume(self.volume.value()/100); self.audio_ready=True
-            except pygame.error: return
-        self.position=max(0,min(self.duration,self.position+seconds));
-        try: pygame.mixer.music.load(str(self.current)); pygame.mixer.music.play(start=self.position); self.playing=True; self.paused=False
-        except pygame.error: pass
-    def seek_slider(self): self.seek(self.progress.value()-self.position)
-    def update_progress(self):
-        if self.playing and not self.paused and self.audio_ready: self.position=min(self.duration,self.position+0.4); self.ignore_slider=True; self.progress.setValue(int(self.position)); self.ignore_slider=False
-    def render_categories(self):
-        preserved=1 if hasattr(self,"volume") else 0
-        while self.category_box.count()>preserved: self.category_box.takeAt(preserved).widget().deleteLater()
-        for i,cat in enumerate(self.categories):
-            b=QPushButton(f"{i+1}.  {cat}"); b.setObjectName("categoryButton"); b.clicked.connect(lambda _,c=cat:self.classify(c)); self.category_box.addWidget(b)
-    def render_reviewed(self):
-        if not hasattr(self,"reviewed_list"): return
-        self.reviewed_list.clear()
-        for item in reversed(self.reviewed):
-            row=QListWidgetItem(f"{item.get('name','Canción')}\n→ {item.get('destination','')}")
-            source=Path(item.get("source", ""))
-            if source.is_file():
-                cover=self.meta(source).get("cover")
-                if cover: row.setIcon(QIcon(QPixmap.fromImage(cover).scaled(48,48,Qt.KeepAspectRatio,Qt.SmoothTransformation)))
-            self.reviewed_list.addItem(row)
-    def manage_categories(self):
-        text,ok=QInputDialog.getText(self,"Categorías","Nombres separados por comas:",text=", ".join(self.categories));
-        if ok:
-            values=[]
-            for value in text.split(','):
-                value=value.strip()
-                if value and value not in values:values.append(value)
-            if values:self.categories=values; self.save_config(); self.render_categories()
-    def manage_genres(self):
-        text,ok=QInputDialog.getText(self,"Géneros","Nombres separados por comas:",text=", ".join(self.genres));
-        if ok:
-            values=[]
-            for value in text.split(','):
-                value=value.strip()
-                if value and value not in values:values.append(value)
-            if values:self.genres=values; self.genre_combo.clear(); self.genre_combo.addItems(values); self.save_config()
-    def classify(self,category):
-        if not self.current:return
-        genre=self.genre_combo.currentText().strip()
-        if not genre or not self.library_path.is_dir(): self.show_message(QMessageBox.Warning,"Falta configuración","Selecciona biblioteca y género antes de clasificar."); return
-        bpm=self.meta(self.current)["bpm"]
-        try:
-            import librosa
-        except ImportError:
-            librosa=None
-        if bpm is None and librosa:
-            try:
-                audio,sr=librosa.load(str(self.current),sr=None,mono=True,duration=90)
-                tempo=librosa.beat.beat_track(y=audio,sr=sr)[0]
-                bpm=round(float(tempo[0] if hasattr(tempo,"__len__") else tempo))
-            except Exception: pass
-        folder=f"{(bpm//4)*4}-{(bpm//4)*4+3} BPM" if bpm else "No BPM"
-        dest=self.library_path/genre/category/folder/self.current.name
-        try:
-            # pygame mantiene abierto el archivo que está cargado; hay que
-            # liberarlo antes de moverlo, especialmente en Windows.
-            self.stop()
-            if self.audio_ready:
-                try:
-                    pygame.mixer.music.unload()
-                except pygame.error:
-                    pass
-            dest.parent.mkdir(parents=True,exist_ok=True)
-            if dest.resolve() != self.current.resolve(): shutil.move(str(self.current),str(dest))
-            self.reviewed.append({"source":str(self.current),"name":self.current.name,"genre":genre,"category":category,"bpm":bpm,"destination":str(dest.relative_to(self.library_path))}); self.stop(); self.current=None; self.save_config(); self.load_tracks(); self.status_message(f"Movida a {category}")
-        except OSError as error: self.show_message(QMessageBox.Critical,"No se pudo mover",str(error))
-    def status_message(self,text): self.status.setText(text) if hasattr(self,"status") else None
-    def eventFilter(self,obj,event):
-        if isinstance(event,QKeyEvent) and event.type()==QKeyEvent.KeyPress and not event.isAutoRepeat():
-            # Los diálogos de edición deben recibir normalmente la barra
-            # espaciadora y las demás teclas, sin activar atajos del reproductor.
-            if QApplication.activeModalWidget() is not None:
-                return super().eventFilter(obj,event)
-            if isinstance(obj,(QLineEdit,QTextEdit,QComboBox)):
-                return super().eventFilter(obj,event)
-            key=event.key()
-            if key==Qt.Key_Up:self.list.setCurrentRow(max(0,self.list.currentRow()-1));return True
-            if key==Qt.Key_Down:self.list.setCurrentRow(min(len(self.tracks)-1,self.list.currentRow()+1));return True
-            if key==Qt.Key_Left:self.seek(-5);return True
-            if key==Qt.Key_Right:self.seek(5);return True
-            if key==Qt.Key_Space:self.toggle();return True
-            if key in (Qt.Key_Delete, Qt.Key_Backspace):self.omit_current();return True
-            if Qt.Key_1<=key<=Qt.Key_9 and key-Qt.Key_1<len(self.categories):self.classify(self.categories[key-Qt.Key_1]);return True
-        return super().eventFilter(obj,event)
-    def closeEvent(self,event): self.stop(); pygame.mixer.quit() if self.audio_ready else None; event.accept()
+    def __init__(self, config_path=None):
+        super().__init__()
+        self.library = Library(Path(config_path) if config_path else config_location())
+        self.current = None
+        self.current_record = None
+        self.current_rating = 0
+        self.drafts = {}
+        self.pending = []
+        self.busy = False
+        self.job = None
+        self.pool = QThreadPool(self)
+        self.pool.setMaxThreadCount(1)
+        self.last_export = None
+        self.rb_states = {}
+        self.connection_dialog = None
+        self.rb_timer = QTimer(self)
+        self.rb_timer.setInterval(12000)
+        self.rb_timer.timeout.connect(self.refresh_rekordbox_status)
+        self.theme_changed = False
+        self.dark = self.library.config.get("dark_mode", True)
+        self.ui_font = "Segoe UI"
+        regular_font = BASE / "Barlow_Condensed,Mr_Dafoe" / "Barlow_Condensed" / "BarlowCondensed-Regular.ttf"
+        font_id = QFontDatabase.addApplicationFont(str(regular_font))
+        if font_id >= 0:
+            self.ui_font = QFontDatabase.applicationFontFamilies(font_id)[0]
+        self.setWindowTitle(f"CapelHouse {VERSION} · Prepara tu música")
+        self.resize(1360, 850)
+        self.setMinimumSize(1000, 680)
+        self.audio = QAudioOutput(self)
+        self.player = QMediaPlayer(self)
+        self.player.setAudioOutput(self.audio)
+        self.player.positionChanged.connect(self.position_changed)
+        self.player.durationChanged.connect(self.duration_changed)
+        self.player.playbackStateChanged.connect(self.playback_changed)
+        self.player.errorOccurred.connect(self.playback_error)
+        self.build_ui()
+        self.apply_theme()
+        self.refresh_paths()
+        self.render_prepared()
+        QApplication.instance().installEventFilter(self)
+        QTimer.singleShot(0, self.refresh_pending)
 
-if __name__=="__main__":
-    app=QApplication(sys.argv); app.setWindowIcon(QIcon(QPixmap.fromImage(QImage(str(LOGO)).copy(448,205,384,384)).scaled(256,256,Qt.KeepAspectRatio,Qt.SmoothTransformation))) if LOGO.is_file() else None; window=App(); window.show(); sys.exit(app.exec())
+    def build_ui(self):
+        file_menu = self.menuBar().addMenu("Biblioteca")
+        open_config = QAction("Abrir biblioteca guardada…", self)
+        open_config.triggered.connect(self.open_library_config)
+        file_menu.addAction(open_config)
+        file_menu.addAction("Ver carpeta de configuración", lambda: QDesktopServices.openUrl(QUrl.fromLocalFile(str(self.library.config_path.parent))))
+        root = QWidget()
+        self.setCentralWidget(root)
+        layout = QVBoxLayout(root)
+        layout.setContentsMargins(24, 18, 24, 16)
+        layout.setSpacing(12)
+        header = QHBoxLayout()
+        logo = QLabel()
+        pixmap = QPixmap(str(BASE / "logo.png"))
+        if not pixmap.isNull():
+            logo.setPixmap(pixmap.scaled(68, 68, Qt.KeepAspectRatio, Qt.SmoothTransformation))
+            self.setWindowIcon(QIcon(pixmap))
+        header.addWidget(logo)
+        names = QVBoxLayout()
+        brand = QLabel("CapelHouse")
+        brand.setObjectName("brand")
+        font = BASE / "Mr_Dafoe" / "MrDafoe-Regular.ttf"
+        if font.exists():
+            font_id = QFontDatabase.addApplicationFont(str(font))
+            families = QFontDatabase.applicationFontFamilies(font_id)
+            if families:
+                brand.setStyleSheet(f"font-family: '{families[0]}'; font-size:38px;")
+        names.addWidget(brand)
+        names.addWidget(QLabel("By Capelgeuse · Tu selección empieza escuchando"))
+        header.addLayout(names, 1)
+        theme = QPushButton("Cambiar tema")
+        theme.clicked.connect(self.toggle_theme)
+        header.addWidget(theme)
+        archive_button = QPushButton("Exportar respaldo")
+        archive_button.clicked.connect(self.export)
+        header.addWidget(archive_button)
+        self.export_button = QPushButton("Enviar a Rekordbox")
+        self.export_button.setObjectName("primary")
+        self.export_button.clicked.connect(self.send_to_rekordbox)
+        header.addWidget(self.export_button)
+        layout.addLayout(header)
+        self.path_box = QGroupBox("Tu biblioteca")
+        locations = QHBoxLayout(self.path_box)
+        entry = QPushButton("Elegir entrada")
+        entry.clicked.connect(self.choose_input)
+        locations.addWidget(entry)
+        self.input_label = QLabel()
+        locations.addWidget(self.input_label, 1)
+        dest = QPushButton("Elegir destino")
+        dest.clicked.connect(self.choose_library)
+        locations.addWidget(dest)
+        self.library_label = QLabel()
+        locations.addWidget(self.library_label, 1)
+        layout.addWidget(self.path_box)
+
+        split = QSplitter(Qt.Horizontal)
+        split.setChildrenCollapsible(False)
+        self.tabs = QTabWidget()
+        pending_tab = QWidget()
+        pl = QVBoxLayout(pending_tab)
+        self.pending_search = QLineEdit()
+        self.pending_search.setPlaceholderText("Buscar entre las nuevas canciones…")
+        self.pending_search.textChanged.connect(self.filter_pending)
+        pl.addWidget(self.pending_search)
+        self.pending_table = self.make_table(["Canción", "Carpeta"])
+        self.pending_table.itemSelectionChanged.connect(self.select_pending)
+        pl.addWidget(self.pending_table, 1)
+        pending_actions = QHBoxLayout()
+        refresh = QPushButton("Actualizar")
+        refresh.clicked.connect(self.refresh_pending)
+        pending_actions.addWidget(refresh)
+        skip = QPushButton("Omitir")
+        skip.clicked.connect(self.skip_current)
+        pending_actions.addWidget(skip)
+        restore = QPushButton("Recuperar omitidas")
+        restore.clicked.connect(self.restore_skipped)
+        pending_actions.addWidget(restore)
+        pl.addLayout(pending_actions)
+        self.tabs.addTab(pending_tab, "Por escuchar")
+
+        prepared_tab = QWidget()
+        rl = QVBoxLayout(prepared_tab)
+        self.prepared_search = QLineEdit()
+        self.prepared_search.setPlaceholderText("Buscar canción o artista…")
+        self.prepared_search.textChanged.connect(self.render_prepared)
+        rl.addWidget(self.prepared_search)
+        filters = QHBoxLayout()
+        self.genre_filter = QComboBox()
+        self.color_filter = QComboBox()
+        self.rating_filter = QComboBox()
+        self.color_filter.addItems(["Todos los colores", *COLORS])
+        self.rating_filter.addItems(["Todas las estrellas", "Sin estrellas", "1 ★", "2 ★", "3 ★", "4 ★", "5 ★"])
+        for widget in (self.genre_filter, self.color_filter, self.rating_filter):
+            widget.currentIndexChanged.connect(self.render_prepared)
+            filters.addWidget(widget)
+        rl.addLayout(filters)
+        self.prepared_table = self.make_table(["Canción", "Género", "Estrellas", "Color", "Rekordbox"])
+        self.prepared_table.itemSelectionChanged.connect(self.select_prepared)
+        rl.addWidget(self.prepared_table, 1)
+        self.export_filtered = QCheckBox("Exportar solo las canciones visibles con estos filtros")
+        self.export_filtered.setChecked(True)
+        rl.addWidget(self.export_filtered)
+        self.check_rb_button = QPushButton("Comprobar estado en Rekordbox")
+        self.check_rb_button.clicked.connect(self.refresh_rekordbox_status)
+        rl.addWidget(self.check_rb_button)
+        self.tabs.addTab(prepared_tab, "Preparadas")
+        self.tabs.currentChanged.connect(self.tab_changed)
+        split.addWidget(self.tabs)
+
+        self.inspector = QGroupBox("Escucha y decide")
+        self.inspector.setMinimumWidth(350)
+        il = QVBoxLayout(self.inspector)
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        panel = QWidget()
+        pv = QVBoxLayout(panel)
+        pv.setContentsMargins(6, 6, 6, 6)
+        pv.setSpacing(6)
+        track_heading = QHBoxLayout()
+        self.cover = QLabel("CH")
+        self.cover.setObjectName("cover")
+        self.cover.setAlignment(Qt.AlignCenter)
+        self.cover.setFixedSize(52, 52)
+        track_heading.addWidget(self.cover)
+        track_labels = QVBoxLayout()
+        self.song = QLabel("Elige una canción para empezar")
+        self.song.setObjectName("song")
+        self.song.setWordWrap(True)
+        self.song.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Preferred)
+        track_labels.addWidget(self.song)
+        self.artist = QLabel("Género + estrellas + color, a tu manera")
+        self.artist.setWordWrap(True)
+        self.artist.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Preferred)
+        track_labels.addWidget(self.artist)
+        track_heading.addLayout(track_labels, 1)
+        pv.addLayout(track_heading)
+        self.play_button = QPushButton("Reproducir")
+        self.play_button.setObjectName("primary")
+        self.play_button.clicked.connect(self.toggle_playback)
+        pv.addWidget(self.play_button)
+        transport = QHBoxLayout()
+        for text, delta in (("−5 s", -5000), ("+5 s", 5000)):
+            button = QPushButton(text)
+            button.clicked.connect(lambda checked=False, d=delta: self.seek(d))
+            transport.addWidget(button)
+        self.time_label = QLabel("0:00 / 0:00")
+        transport.addWidget(self.time_label)
+        pv.addLayout(transport)
+        self.progress = QSlider(Qt.Horizontal)
+        self.progress.setRange(0, 0)
+        self.progress.sliderMoved.connect(self.player.setPosition)
+        pv.addWidget(self.progress)
+        volume = QHBoxLayout()
+        volume.addWidget(QLabel("Volumen"))
+        self.volume = QSlider(Qt.Horizontal)
+        self.volume.setRange(0, 100)
+        self.volume.setValue(75)
+        self.audio.setVolume(.75)
+        self.volume.valueChanged.connect(lambda value: self.audio.setVolume(value / 100))
+        volume.addWidget(self.volume)
+        pv.addLayout(volume)
+        genre_row = QHBoxLayout()
+        genre_row.addWidget(QLabel("Género"))
+        self.genre_combo = QComboBox()
+        self.genre_combo.addItems(self.library.genres)
+        genre_row.addWidget(self.genre_combo, 1)
+        edit = QPushButton("Editar")
+        edit.clicked.connect(self.edit_genres)
+        genre_row.addWidget(edit)
+        pv.addLayout(genre_row)
+        pv.addWidget(QLabel("Estrellas"))
+        stars = QHBoxLayout()
+        self.star_buttons = []
+        for number in range(1, 6):
+            button = QPushButton()
+            button.setObjectName("star")
+            button.setIcon(star_icon(False))
+            button.setAccessibleName(f"{number} estrellas")
+            button.setToolTip(f"{number} estrellas · tecla {number}")
+            button.clicked.connect(lambda checked=False, n=number: self.set_rating(n))
+            self.star_buttons.append(button)
+            stars.addWidget(button)
+        clear = QPushButton("Limpiar")
+        clear.clicked.connect(lambda: self.set_rating(0))
+        stars.addWidget(clear)
+        pv.addLayout(stars)
+        color_row = QHBoxLayout()
+        color_row.addWidget(QLabel("Color"))
+        self.color_combo = QComboBox()
+        for name, rgb in COLORS.items():
+            icon = QPixmap(16, 16)
+            icon.fill(QColor(*rgb) if rgb else QColor("#777777"))
+            self.color_combo.addItem(QIcon(icon), name)
+        color_row.addWidget(self.color_combo, 1)
+        pv.addLayout(color_row)
+        self.preview = QLabel("Destino: elige una biblioteca y un género")
+        self.preview.setWordWrap(True)
+        self.preview.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Preferred)
+        pv.addWidget(self.preview)
+        self.save_button = QPushButton("Guardar y siguiente")
+        self.save_button.setObjectName("primary")
+        self.save_button.clicked.connect(self.classify)
+        self.autoplay = QCheckBox("Reproducir la siguiente automáticamente")
+        self.autoplay.setChecked(True)
+        pv.addStretch(1)
+        scroll.setWidget(panel)
+        il.addWidget(scroll)
+        il.addWidget(self.save_button)
+        il.addWidget(self.autoplay)
+        split.addWidget(self.inspector)
+        split.setSizes([800, 430])
+        layout.addWidget(split, 1)
+        self.status = QLabel("Selecciona tu carpeta de entrada y el destino de la biblioteca.")
+        self.status.setWordWrap(True)
+        layout.addWidget(self.status)
+        shortcuts = QLabel("Espacio: reproducir/pausar   ·   1–5: estrellas   ·   0: limpiar   ·   Enter: guardar   ·   Izq / Der: 5 s")
+        shortcuts.setObjectName("muted")
+        shortcuts.setWordWrap(True)
+        layout.addWidget(shortcuts)
+        self.genre_combo.currentTextChanged.connect(self.update_preview)
+        self.sync_genre_filter()
+
+    def make_table(self, headers):
+        table = QTableWidget(0, len(headers))
+        table.setHorizontalHeaderLabels(headers)
+        table.setSelectionBehavior(QAbstractItemView.SelectRows)
+        table.setSelectionMode(QAbstractItemView.SingleSelection)
+        table.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        table.verticalHeader().hide()
+        table.setAlternatingRowColors(True)
+        table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
+        table.horizontalHeader().setSectionResizeMode(0, QHeaderView.Stretch)
+        return table
+
+    def apply_theme(self):
+        bg, panel, text, muted, edge, row = (("#111315", "#1b1f23", "#f4f1eb", "#a7adb5", "#343b44", "#22272d") if self.dark else ("#f2f1ec", "#ffffff", "#172027", "#62707a", "#d4d9de", "#f6f7f9"))
+        self.setStyleSheet(f"""
+        QMainWindow, QTabWidget::pane {{ background:{bg}; }}
+        QWidget {{ color:{text}; font-family:'{self.ui_font}'; font-size:15px; }}
+        QWidget#qt_tabwidget_stackedwidget {{ background:{bg}; }}
+        QLabel#brand {{ font-size:30px; font-weight:600; }}
+        QLabel#song {{ font-size:19px; font-weight:600; }}
+        QLabel#muted {{ color:{muted}; }}
+        QGroupBox {{ background:{panel}; border:1px solid {edge}; border-radius:10px; margin-top:10px; padding:12px; font-weight:600; }}
+        QGroupBox::title {{ subcontrol-origin:margin; left:12px; padding:0 4px; }}
+        QScrollArea {{ border:0; background:{panel}; }} QScrollArea > QWidget > QWidget {{ background:{panel}; }}
+        QPushButton {{ background:{panel}; border:1px solid {edge}; border-radius:7px; padding:8px 12px; min-height:18px; }}
+        QPushButton:hover {{ border-color:#e6b84a; }} QPushButton:disabled {{ color:{muted}; }}
+        QPushButton#primary {{ background:#e6b84a; color:#172027; font-weight:700; }}
+        QPushButton#star {{ color:#e6b84a; font-size:24px; padding:3px; }}
+        QLineEdit, QComboBox {{ background:{panel}; border:1px solid {edge}; border-radius:6px; padding:6px; min-height:20px; }}
+        QComboBox QAbstractItemView {{ background:{panel}; color:{text}; selection-background-color:#806b36; }}
+        QTableWidget {{ background:{panel}; alternate-background-color:{row}; border:0; gridline-color:{edge}; selection-background-color:#66572f; selection-color:#ffffff; }}
+        QHeaderView::section {{ background:{row}; color:{muted}; border:0; padding:9px 6px; }}
+        QTableWidget::item {{ padding:6px; }}
+        QCheckBox {{ spacing:6px; background:transparent; }}
+        QTabBar::tab {{ background:{panel}; padding:10px 16px; border-bottom:2px solid {edge}; }}
+        QTabBar::tab:selected {{ border-bottom-color:#e6b84a; }}
+        QLabel#cover {{ background:{row}; color:#e6b84a; border-radius:10px; font-size:24px; }}
+        QSlider::groove:horizontal {{ background:{edge}; height:5px; }} QSlider::handle:horizontal {{ background:#e6b84a; width:13px; margin:-5px 0; border-radius:6px; }}
+        QMessageBox {{ background:{panel}; }} QInputDialog {{ background:{panel}; }}
+        """)
+
+    def toggle_theme(self):
+        self.dark = not self.dark
+        self.theme_changed = True
+        self.library.config["dark_mode"] = self.dark
+        self.apply_theme()
+
+    def open_library_config(self):
+        if self.busy:
+            return
+        filename, _ = QFileDialog.getOpenFileName(self, "Abrir biblioteca de CapelHouse", "", "Configuración (*.json)")
+        if filename:
+            try:
+                loaded = Library(Path(filename))
+                self.clear_current()
+                self.library = loaded
+                self.rb_states.clear()
+                self.dark = loaded.config.get("dark_mode", self.dark)
+                self.apply_theme()
+                self.drafts.clear()
+                self.genre_combo.clear()
+                self.genre_combo.addItems(loaded.genres)
+                self.sync_genre_filter()
+                self.refresh_paths()
+                self.render_prepared()
+                self.refresh_pending()
+            except Exception as error:
+                self.show_error(str(error))
+
+    def refresh_paths(self):
+        for label, path in ((self.input_label, self.library.input_path), (self.library_label, self.library.library_path)):
+            value = str(path) if path else "Sin seleccionar"
+            label.setText(value if len(value) < 45 else "…" + value[-44:])
+            label.setToolTip(value)
+        self.update_preview()
+
+    def choose_input(self):
+        path = QFileDialog.getExistingDirectory(self, "Selecciona USB, Descargas o carpeta de entrada")
+        if path:
+            try:
+                self.library.set_paths(input_path=Path(path))
+                self.refresh_paths()
+                self.refresh_pending()
+            except Exception as error:
+                self.show_error(str(error))
+
+    def choose_library(self):
+        path = QFileDialog.getExistingDirectory(self, "Selecciona la biblioteca donde guardar por género")
+        if path:
+            try:
+                self.library.set_paths(library_path=Path(path))
+                self.refresh_paths()
+                self.refresh_pending()
+            except Exception as error:
+                self.show_error(str(error))
+
+    def run_job(self, function, args, callback, message):
+        if self.busy:
+            return
+        self.busy = True
+        self.status.setText(message)
+        for widget in (self.tabs, self.inspector, self.path_box, self.export_button):
+            widget.setEnabled(False)
+        self.job = Task(function, *args)
+        self.job.signals.done.connect(lambda result: self.job_done(callback, result))
+        self.job.signals.failed.connect(self.job_failed)
+        self.pool.start(self.job)
+
+    def unlock(self):
+        self.busy = False
+        for widget in (self.tabs, self.inspector, self.path_box, self.export_button):
+            widget.setEnabled(True)
+
+    def job_done(self, callback, result):
+        self.unlock()
+        try:
+            callback(result)
+        except Exception as error:
+            self.show_error(str(error))
+
+    def job_failed(self, message):
+        self.unlock()
+        self.show_error(message)
+
+    def show_error(self, message):
+        self.status.setText(message)
+        QMessageBox.warning(self, "CapelHouse", message)
+
+    def refresh_pending(self):
+        self.remember_draft()
+        self.run_job(self.library.scan, (), self.pending_loaded, "Buscando canciones…")
+
+    def pending_loaded(self, paths):
+        self.pending = paths
+        self.filter_pending()
+        self.status.setText(f"{len(paths)} canciones pendientes · {len(self.library.tracks)} preparadas")
+        if not self.library.input_path or not self.library.input_path.is_dir():
+            self.status.setText("Elige una carpeta de entrada disponible para comenzar.")
+
+    def filter_pending(self):
+        query = self.pending_search.text().casefold()
+        paths = [path for path in self.pending if query in path.name.casefold()]
+        with QSignalBlocker(self.pending_table):
+            self.pending_table.setRowCount(len(paths))
+            for row, path in enumerate(paths):
+                item = QTableWidgetItem(path.name)
+                item.setData(Qt.UserRole, str(path))
+                item.setToolTip(str(path))
+                self.pending_table.setItem(row, 0, item)
+                self.pending_table.setItem(row, 1, QTableWidgetItem(path.parent.name))
+            if paths:
+                self.pending_table.selectRow(0)
+        self.tabs.setTabText(0, f"Por escuchar ({len(paths)})")
+        if paths:
+            self.select_pending()
+        elif self.tabs.currentIndex() == 0:
+            self.clear_current()
+
+    def select_pending(self):
+        row = self.pending_table.currentRow()
+        item = self.pending_table.item(row, 0)
+        if item and self.tabs.currentIndex() == 0:
+            self.open_track(Path(item.data(Qt.UserRole)))
+
+    def sync_genre_filter(self):
+        value = self.genre_filter.currentText()
+        with QSignalBlocker(self.genre_filter):
+            self.genre_filter.clear()
+            self.genre_filter.addItems(["Todos los géneros", *sorted(set(self.library.genres + [r.get('genre', '') for r in self.library.tracks]) - {''})])
+            self.genre_filter.setCurrentIndex(max(0, self.genre_filter.findText(value)))
+
+    def visible_records(self):
+        query = self.prepared_search.text().casefold()
+        genre, color = self.genre_filter.currentText(), self.color_filter.currentText()
+        rating = self.rating_filter.currentIndex() - 1
+        return [record for record in self.library.tracks
+                if (not query or query in f"{record.get('name', '')} {record.get('artist', '')}".casefold())
+                and (self.genre_filter.currentIndex() <= 0 or record.get("genre") == genre)
+                and (self.color_filter.currentIndex() <= 0 or record.get("color", "Sin color") == color)
+                and (rating < 0 or record.get("rating", 0) == rating)]
+
+    def render_prepared(self, *args):
+        records = self.visible_records()
+        selected = self.prepared_table.item(self.prepared_table.currentRow(), 0)
+        selected_id = selected.data(Qt.UserRole) if selected else None
+        selected_row = next((i for i, r in enumerate(records) if r["id"] == selected_id), 0)
+        with QSignalBlocker(self.prepared_table):
+            self.prepared_table.setRowCount(len(records))
+            for row, record in enumerate(records):
+                exists = Path(record["path"]).is_file()
+                state = self.rb_states.get(record["id"], {})
+                rb_text = RB_STATES.get(state.get("state"), "Sin verificar") if exists else "Archivo no localizado"
+                values = [record.get("name", ""), record.get("genre", ""), f"{record.get('rating', 0)} / 5", record.get("color", "Sin color"), rb_text]
+                for col, value in enumerate(values):
+                    item = QTableWidgetItem(value)
+                    item.setData(Qt.UserRole, record["id"])
+                    item.setToolTip(record["path"])
+                    if col == 4 and state.get("detail"):
+                        item.setToolTip(state["detail"])
+                    if col == 3:
+                        rgb = COLORS.get(value)
+                        if rgb:
+                            item.setForeground(QColor(*rgb))
+                    self.prepared_table.setItem(row, col, item)
+            if records:
+                self.prepared_table.selectRow(selected_row)
+        self.tabs.setTabText(1, f"Preparadas ({len(records)})")
+        if self.tabs.currentIndex() == 1:
+            if records:
+                chosen = records[selected_row]
+                if not self.current_record or self.current_record["id"] != chosen["id"]:
+                    self.open_track(Path(chosen["path"]), chosen)
+            else:
+                self.clear_current()
+
+    def select_prepared(self):
+        item = self.prepared_table.item(self.prepared_table.currentRow(), 0)
+        if item and self.tabs.currentIndex() == 1:
+            record = next((r for r in self.library.tracks if r["id"] == item.data(Qt.UserRole)), None)
+            if record:
+                self.open_track(Path(record["path"]), record)
+
+    def tab_changed(self, index):
+        if index == 0:
+            self.select_pending()
+        else:
+            self.select_prepared()
+            if self.prepared_table.currentRow() < 0:
+                if self.prepared_table.rowCount():
+                    self.prepared_table.selectRow(0)
+                else:
+                    self.clear_current()
+
+    def remember_draft(self):
+        if self.current:
+            self.drafts[str(self.current)] = (self.genre_combo.currentText(), self.current_rating, self.color_combo.currentText())
+
+    def open_track(self, path, record=None):
+        self.remember_draft()
+        self.player.stop()
+        self.current, self.current_record = path, record
+        self.player.setSource(QUrl.fromLocalFile(str(path)) if path.is_file() else QUrl())
+        self.song.setText(record.get("title", path.stem) if record else path.stem)
+        self.artist.setText(record.get("artist") or path.name if record else path.name)
+        self.cover.clear()
+        self.cover.setText("CH")
+        genre, rating, color = self.drafts.get(str(path), (record.get("genre", "") if record else self.genre_combo.currentText(), record.get("rating", 0) if record else 0, record.get("color", "Sin color") if record else "Sin color"))
+        if genre:
+            if self.genre_combo.findText(genre) < 0:
+                self.genre_combo.addItem(genre)
+            self.genre_combo.setCurrentText(genre)
+        self.set_rating(rating)
+        self.color_combo.setCurrentText(color)
+        self.save_button.setText("Actualizar preparación" if record else "Guardar y siguiente")
+        self.update_preview()
+        self.load_cover(path)
+
+    def clear_current(self):
+        self.remember_draft()
+        self.player.stop()
+        self.player.setSource(QUrl())
+        self.current = self.current_record = None
+        self.song.setText("Selecciona una canción")
+        self.cover.clear()
+        self.cover.setText("CH")
+        self.artist.setText("Género, estrellas y color se eligen por separado")
+
+    def load_cover(self, path):
+        try:
+            raw = audio_metadata(path)
+            pictures = getattr(raw, "pictures", [])
+            data = pictures[0].data if pictures else None
+            if not data:
+                for tag in (getattr(raw, "tags", None) or {}).values():
+                    candidate = getattr(tag, "data", None)
+                    if isinstance(candidate, bytes):
+                        data = candidate
+                        break
+            if data:
+                pixmap = QPixmap()
+                if pixmap.loadFromData(data):
+                    self.cover.setPixmap(pixmap.scaled(52, 52, Qt.KeepAspectRatio, Qt.SmoothTransformation))
+        except Exception:
+            logging.debug("No cover for %s", path)
+
+    def set_rating(self, rating):
+        self.current_rating = rating
+        for index, button in enumerate(self.star_buttons, 1):
+            button.setIcon(star_icon(index <= rating))
+
+    def update_preview(self, *args):
+        library = self.library.library_path
+        genre = self.genre_combo.currentText()
+        self.preview.setText(f"Destino: {library / genre}" if library and genre else "Elige el destino y un género para guardar")
+
+    def edit_genres(self):
+        text, ok = QInputDialog.getMultiLineText(self, "Tus géneros", "Un género por línea:", "\n".join(self.library.genres))
+        if ok:
+            try:
+                selected = self.genre_combo.currentText()
+                self.library.set_genres(text.splitlines())
+                self.genre_combo.clear()
+                self.genre_combo.addItems(self.library.genres)
+                self.genre_combo.setCurrentIndex(max(0, self.genre_combo.findText(selected)))
+                self.sync_genre_filter()
+                self.render_prepared()
+            except Exception as error:
+                self.show_error(str(error))
+
+    def classify(self):
+        if self.busy or not self.current:
+            return
+        source = self.current
+        genre, rating, color = self.genre_combo.currentText(), self.current_rating, self.color_combo.currentText()
+        record = self.current_record
+        self.player.stop()
+        self.player.setSource(QUrl())
+        action = self.library.update if record else self.library.prepare
+        args = (record["id"] if record else source, genre, rating, color)
+        self.run_job(action, args, lambda result: self.saved(result, source, bool(record)), "Guardando preparación…")
+
+    def saved(self, result, source, updating):
+        self.drafts.pop(str(source), None)
+        self.rb_states.pop(result["id"], None)
+        self.current = self.current_record = None
+        self.sync_genre_filter()
+        self.render_prepared()
+        if updating:
+            self.open_track(Path(result["path"]), result)
+            self.status.setText("Estrellas, color y género actualizados.")
+        else:
+            self.pending = [path for path in self.pending if path != source]
+            self.filter_pending()
+            self.status.setText(f"Preparada: {result.get('name', '')} · {result['genre']} · {result['rating']} estrellas · {result['color']}")
+            if self.autoplay.isChecked() and self.current:
+                self.player.play()
+
+    def bridge_directory(self):
+        configured = self.library.config.get("rekordbox_bridge_dir")
+        return Path(configured) if configured else default_bridge_dir()
+
+    def send_to_rekordbox(self):
+        if self.busy:
+            return
+        if not self.library.tracks:
+            self.show_error("Primero prepara al menos una canción por género.")
+            return
+        # Always publish the complete library; UI filters must not remove tracks from the bridge.
+        records = [dict(record) for record in self.library.tracks]
+        self.run_job(publish_library, (records, self.bridge_directory()), self.bridge_published,
+                     "Actualizando la biblioteca de conexión con Rekordbox…")
+
+    def bridge_published(self, result):
+        self.last_export = result
+        self.status.setText(f"Biblioteca publicada: {result['count']} canciones. Falta comprobar su importación y análisis.")
+        self.show_connection_dialog(result)
+
+    def show_connection_dialog(self, result):
+        dialog = QDialog(self)
+        self.connection_dialog = dialog
+        dialog.setWindowTitle("Conectar CapelHouse con Rekordbox")
+        dialog.resize(680, 520)
+        layout = QVBoxLayout(dialog)
+        heading = QLabel("Tu música, conectada a Rekordbox")
+        heading.setObjectName("song")
+        layout.addWidget(heading)
+        path = Path(result["xml"])
+        self.connection_label = QLabel()
+        self.connection_label.setWordWrap(True)
+        layout.addWidget(self.connection_label)
+        path_field = QLineEdit(str(path))
+        path_field.setReadOnly(True)
+        layout.addWidget(path_field)
+        copy = QPushButton("Copiar ruta de conexión")
+        copy.clicked.connect(lambda: QApplication.clipboard().setText(str(path)))
+        layout.addWidget(copy)
+        instructions = QLabel(
+            "1. Con Rekordbox cerrado, pulsa Configurar conexión. Se activan el panel XML y el análisis automático.\n\n"
+            "2. Abre Rekordbox. En su panel lateral, abre rekordbox xml > Playlists > CapelHouse "
+            "y usa Importar playlist en los géneros que quieras añadir. "
+            "Si el panel muestra una versión anterior, pulsa su botón Actualizar.\n\n"
+            "3. Pulsa Comprobar estado. CapelHouse solo muestra Lista cuando encuentra la canción "
+            "en Colección, la clasificación coincide y hay datos nativos de análisis. "
+            "Si falta el análisis, selecciona la canción en Rekordbox y usa Analizar pista.\n\n"
+            "La ruta de conexión se mantiene en los siguientes envíos. Las canciones continúan en sus carpetas por género.")
+        instructions.setWordWrap(True)
+        layout.addWidget(instructions)
+        buttons = QHBoxLayout()
+        configure = QPushButton("Configurar conexión")
+        configure.clicked.connect(lambda: self.configure_bridge(path))
+        buttons.addWidget(configure)
+        open_rb = QPushButton("Abrir Rekordbox")
+        open_rb.clicked.connect(self.open_rekordbox)
+        buttons.addWidget(open_rb)
+        check = QPushButton("Comprobar estado")
+        check.clicked.connect(self.refresh_rekordbox_status)
+        buttons.addWidget(check)
+        layout.addLayout(buttons)
+        repair = QPushButton("Aplicar clasificación a canciones ya importadas")
+        repair.clicked.connect(self.repair_native_classification)
+        layout.addWidget(repair)
+        repair_help = QLabel("Si las canciones ya estaban en Colección, cierra Rekordbox y usa este botón. "
+                             "Se respalda la biblioteca y se actualizan solo género, estrellas y color; se conserva el análisis.")
+        repair_help.setWordWrap(True)
+        layout.addWidget(repair_help)
+        self.connection_results = QLabel("La publicación del XML no confirma la importación.")
+        self.connection_results.setWordWrap(True)
+        layout.addWidget(self.connection_results)
+        close = QPushButton("Volver a mi biblioteca")
+        close.clicked.connect(dialog.accept)
+        layout.addWidget(close)
+        self.update_connection_label(path)
+        missing = result.get("missing", [])
+        if missing:
+            self.connection_results.setText(f"Se omitieron {len(missing)} archivos no localizados. Consulta missing_files.txt junto al XML.")
+        self.rb_timer.start()
+        dialog.finished.connect(lambda: self.rb_timer.stop())
+        dialog.exec()
+        self.connection_dialog = None
+
+    def update_connection_label(self, xml_path=None):
+        path = xml_path or self.bridge_directory() / "CapelHouse.xml"
+        try:
+            connection = inspect_connection(xml_path=path)
+        except Exception as error:
+            connection = {"configured": False, "running": False, "error": str(error)}
+        self.rb_connection = connection
+        if hasattr(self, "connection_label"):
+            configured = connection.get("configured")
+            running = connection.get("running")
+            text = ("Conexión configurada." if configured else "Rekordbox aún no apunta a esta biblioteca.")
+            if connection.get("error"):
+                text += f" {connection['error']}"
+            if running and not configured:
+                text += " Cierra Rekordbox para configurar sin sobrescribir sus ajustes abiertos."
+            self.connection_label.setText(text)
+        return connection
+
+    def configure_bridge(self, path):
+        if self.busy:
+            return
+        try:
+            result = configure_connection(path)
+            self.update_connection_label(path)
+            self.connection_results.setText(f"Conexión configurada. Respaldo de ajustes: {result.get('backup', '')}")
+        except Exception as error:
+            self.connection_results.setText(str(error))
+
+    def open_rekordbox(self):
+        connection = self.update_connection_label()
+        executable = connection.get("executable")
+        if not executable:
+            self.show_error("No se encontró Rekordbox. Ábrelo desde su acceso directo.")
+            return
+        try:
+            subprocess.Popen([str(executable)], shell=False)
+        except OSError as error:
+            self.show_error(str(error))
+
+    def repair_native_classification(self):
+        if self.busy:
+            return
+        self.run_job(apply_classification, ([dict(record) for record in self.library.tracks],),
+                     self.native_classification_applied, "Respaldando y aplicando la clasificación en Rekordbox…")
+
+    def native_classification_applied(self, result):
+        text = f"Clasificación aplicada a {result['updated']} canciones."
+        if result.get("backup"):
+            text += f" Respaldo: {result['backup']}"
+        if result.get("missing"):
+            text += f" {len(result['missing'])} canciones todavía deben importarse desde el panel XML."
+        if self.connection_dialog is not None:
+            self.connection_results.setText(text)
+        self.status.setText(text)
+        self.refresh_rekordbox_status()
+
+    def refresh_rekordbox_status(self):
+        if self.busy or not self.library.tracks:
+            return
+        records = [dict(record) for record in self.library.tracks]
+        self.run_job(inspect_tracks, (records,), self.rekordbox_status_received,
+                     "Comprobando importación, clasificación y análisis en Rekordbox…")
+
+    def rekordbox_status_received(self, statuses):
+        self.rb_states = {row["id"]: row for row in statuses}
+        self.render_prepared()
+        counts = {}
+        for row in statuses:
+            state = RB_STATES.get(row.get("state"), "Sin verificar")
+            counts[state] = counts.get(state, 0) + 1
+        text = " · ".join(f"{count} {name.lower()}" for name, count in counts.items())
+        self.status.setText(text or "No hay canciones que verificar.")
+        if self.connection_dialog is not None:
+            self.connection_results.setText(text)
+
+    def skip_current(self):
+        if self.current and not self.current_record:
+            try:
+                self.library.skip(self.current)
+                self.refresh_pending()
+            except Exception as error:
+                self.show_error(str(error))
+
+    def restore_skipped(self):
+        try:
+            self.library.restore_skipped()
+            self.refresh_pending()
+        except Exception as error:
+            self.show_error(str(error))
+
+    def toggle_playback(self):
+        if not self.current or not self.current.is_file():
+            self.status.setText("Selecciona un archivo de audio disponible.")
+            return
+        if self.player.source().isEmpty():
+            self.player.setSource(QUrl.fromLocalFile(str(self.current)))
+        if self.player.playbackState() == QMediaPlayer.PlayingState:
+            self.player.pause()
+        else:
+            self.player.play()
+
+    def seek(self, delta):
+        self.player.setPosition(max(0, min(self.player.duration(), self.player.position() + delta)))
+
+    def duration_changed(self, duration):
+        self.progress.setRange(0, duration)
+        self.position_changed(self.player.position())
+
+    def position_changed(self, position):
+        if not self.progress.isSliderDown():
+            self.progress.setValue(position)
+        self.time_label.setText(f"{clock(position)} / {clock(self.player.duration())}")
+
+    def playback_changed(self, state):
+        self.play_button.setText("Pausar" if state == QMediaPlayer.PlayingState else "Reproducir")
+
+    def playback_error(self, error, message):
+        if error != QMediaPlayer.NoError:
+            self.status.setText(f"No se pudo reproducir: {message}")
+
+    def export(self):
+        records = self.visible_records() if self.tabs.currentIndex() == 1 and self.export_filtered.isChecked() else list(self.library.tracks)
+        if not records:
+            self.show_error("Prepara al menos una canción o amplía los filtros para exportar.")
+            return
+        folder = QFileDialog.getExistingDirectory(self, "Dónde guardar la exportación para Rekordbox")
+        if folder:
+            self.run_job(export_library, (records, Path(folder)), self.export_done, "Generando XML, playlist y respaldo…")
+
+    def export_done(self, result):
+        self.last_export = result
+        self.status.setText(f"Exportadas {result['count']} canciones. XML: {result['xml']}")
+        missing = len(result.get("missing", []))
+        text = (f"{result['count']} canciones exportadas.\n\n{result['xml']}\n\n"
+                "En Rekordbox, elige este XML en Preferencias > Avanzado > Base de datos > rekordbox xml "
+                "(la ubicación depende de la versión). Activa el panel rekordbox xml y usa Importar colección o playlist.\n\n"
+                "El XML lleva género, estrellas y color. El M3U8 solo contiene la lista de archivos. "
+                "Conserva las canciones en su ubicación después de importar.")
+        if missing:
+            text += f"\n\nSe omitieron {missing} archivos no localizados. Revisa el respaldo de exportación."
+        box = QMessageBox(QMessageBox.Information, "Preparación exportada", text, parent=self)
+        open_button = box.addButton("Abrir carpeta", QMessageBox.ActionRole)
+        box.addButton(QMessageBox.Ok)
+        box.exec()
+        if box.clickedButton() == open_button:
+            QDesktopServices.openUrl(QUrl.fromLocalFile(str(Path(result["xml"]).parent)))
+
+    def eventFilter(self, obj, event):
+        if isinstance(event, QKeyEvent) and event.type() == QEvent.KeyPress and not event.isAutoRepeat():
+            if self.busy or QApplication.activeModalWidget() is not None:
+                return super().eventFilter(obj, event)
+            focus = QApplication.focusWidget()
+            if isinstance(focus, (QLineEdit, QComboBox)) or (focus is not None and focus.inherits("QTextEdit")):
+                return super().eventFilter(obj, event)
+            if event.modifiers() & (Qt.ControlModifier | Qt.AltModifier | Qt.MetaModifier):
+                return super().eventFilter(obj, event)
+            key = event.key()
+            if key == Qt.Key_Space:
+                self.toggle_playback()
+            elif Qt.Key_0 <= key <= Qt.Key_5:
+                self.set_rating(key - Qt.Key_0)
+            elif key in (Qt.Key_Return, Qt.Key_Enter):
+                self.classify()
+            elif key in (Qt.Key_Left, Qt.Key_Right):
+                self.seek(5000 if key == Qt.Key_Right else -5000)
+            else:
+                return super().eventFilter(obj, event)
+            return True
+        return super().eventFilter(obj, event)
+
+    def closeEvent(self, event):
+        if self.busy:
+            self.status.setText("Espera a que termine la operación para cerrar CapelHouse.")
+            event.ignore()
+            return
+        self.rb_timer.stop()
+        self.player.stop()
+        self.player.setSource(QUrl())
+        if self.theme_changed:
+            try:
+                self.library.save()
+            except OSError as error:
+                self.status.setText(f"No se pudo guardar el tema: {error}")
+        QApplication.instance().removeEventFilter(self)
+        event.accept()
+
+
+def main():
+    parser = argparse.ArgumentParser(description="CapelHouse")
+    parser.add_argument("--config", type=Path, help="Ruta de configuración alternativa")
+    parser.add_argument("--self-test", type=Path, help="Verifica la aplicación con audios sintéticos en esta carpeta")
+    parser.add_argument("--diagnose-rekordbox", type=Path, help="Guarda un diagnóstico de conexión y análisis en solo lectura")
+    options = parser.parse_args()
+    if options.diagnose_rekordbox:
+        from rekordbox_diagnostic import create_report
+        return create_report(options.config or config_location(), options.diagnose_rekordbox)
+    if options.self_test:
+        os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
+    app = QApplication(sys.argv[:1])
+    app.setApplicationName("CapelHouse")
+    try:
+        if options.self_test:
+            from smoke_check import start_check
+            return start_check(app, options.self_test)
+        window = App(options.config)
+    except Exception as error:
+        QMessageBox.critical(None, "CapelHouse no pudo iniciar", str(error))
+        return 1
+    window.show()
+    return app.exec()
+
+
+if __name__ == "__main__":
+    sys.exit(main())

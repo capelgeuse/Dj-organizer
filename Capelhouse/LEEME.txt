@@ -1,0 +1,49 @@
+CapelHouse 2.1 para Windows de 64 bits
+
+1. Extrae TODA la carpeta del ZIP a tu computadora.
+2. Abre CapelHouse.exe. Este paquete incluye Python y sus dependencias.
+3. Selecciona la carpeta de canciones nuevas y una biblioteca de destino.
+4. Escucha, elige el género, asigna estrellas y color y pulsa Guardar y siguiente.
+
+Las estrellas y el color son independientes. Se copian los archivos a carpetas
+por género. Los originales se conservan. No se crean carpetas por BPM.
+
+Para abrir una biblioteca anterior usa Biblioteca > Abrir biblioteca guardada
+y selecciona su configuracion_dj.json o library.json. La biblioteca seleccionada
+guarda sus cambios junto a ese archivo. Al volver a abrir el programa, selecciona
+esa biblioteca de nuevo si no utilizaste la ubicación predeterminada.
+
+La biblioteca predeterminada se guarda en %LOCALAPPDATA%\CapelHouse\library.json.
+Los colores y estrellas se guardan en esa biblioteca, no dentro del audio.
+
+Enviar a Rekordbox publica la biblioteca preparada completa en CapelHouse.xml.
+La ruta se mantiene en los siguientes envíos. Publicar no importa las pistas.
+
+1. Con Rekordbox cerrado, pulsa Configurar conexión. CapelHouse respalda los
+   ajustes y configura la ruta XML, su panel y el análisis automático.
+2. Pulsa Abrir Rekordbox o usa su acceso directo. En el panel lateral entra en
+   rekordbox xml > Playlists > CapelHouse. Actualiza el panel si ves datos
+   anteriores y usa Importar playlist en cada género que quieras incorporar.
+3. Vuelve a CapelHouse y pulsa Comprobar estado. La consulta a la base de datos
+   es de solo lectura. Lista solo aparece si la pista está en la colección,
+   coinciden género, estrellas y color, y hay datos nativos de análisis.
+   Si falta el análisis, usa Analizar pista en Rekordbox y vuelve a comprobar.
+   Sin verificar no significa que la pista esté lista.
+
+Mantén el audio en su ubicación. La exportación manual XML/CSV/M3U8 sigue
+disponible. Importar el M3U8 o arrastrar audio no transfiere estrellas ni colores.
+Prueba primero con pistas nuevas; reimportar no garantiza que se actualice la
+clasificación de pistas existentes.
+
+Si ya arrastraste las canciones y no tienen tus estrellas o colores:
+1. Cierra Rekordbox y abre Enviar a Rekordbox en CapelHouse.
+2. Pulsa Aplicar clasificación a canciones ya importadas. Se crea un respaldo
+   cifrado y se actualizan género, estrellas y color de las rutas coincidentes.
+   Se conserva el análisis, los cues y las playlists. No incorpora pistas nuevas.
+3. Vuelve a abrir Rekordbox y pulsa Comprobar estado en CapelHouse.
+
+Se detectó Rekordbox 7.2.8 en ejecución, pero no se pudo activar su ventana
+durante la prueba automatizada. La importación y el análisis nativos no se
+validaron de extremo a extremo.
+
+Formato oficial: https://rekordbox.com/en/support/developer/

@@ -1,53 +1,37 @@
 # -*- mode: python ; coding: utf-8 -*-
-from PyInstaller.utils.hooks import collect_all
+from pathlib import Path
 
-datas = [('logo.png', '.'), ('Mr_Dafoe', 'Mr_Dafoe'), ('Barlow_Condensed,Mr_Dafoe', 'Barlow_Condensed,Mr_Dafoe')]
-binaries = []
-hiddenimports = []
-tmp_ret = collect_all('librosa')
-datas += tmp_ret[0]; binaries += tmp_ret[1]; hiddenimports += tmp_ret[2]
-tmp_ret = collect_all('soundfile')
-datas += tmp_ret[0]; binaries += tmp_ret[1]; hiddenimports += tmp_ret[2]
-
+root = Path(SPECPATH)
+datas = [
+    (str(root / 'logo.png'), '.'),
+    (str(root / 'Mr_Dafoe'), 'Mr_Dafoe'),
+    (str(root / 'Barlow_Condensed,Mr_Dafoe'), 'Barlow_Condensed,Mr_Dafoe'),
+]
 
 a = Analysis(
-    ['CapelHouse_Qt.py'],
-    pathex=[],
-    binaries=binaries,
+    [str(root / 'CapelHouse_Qt.py')],
+    pathex=[str(root)],
+    binaries=[],
     datas=datas,
-    hiddenimports=hiddenimports,
-    hookspath=[],
-    hooksconfig={},
-    runtime_hooks=[],
-    excludes=[],
+    # The bridge loads the reader/driver at runtime, and SQLAlchemy resolves
+    # SQLite dialects by name. Follow normal imports for NumPy and Construct.
+    hiddenimports=[
+        'pyrekordbox',
+        'pyrekordbox.config',
+        'sqlalchemy.dialects.sqlite.pysqlite',
+        'sqlalchemy.dialects.sqlite.pysqlcipher',
+        'sqlcipher3.dbapi2',
+        'sqlcipher3._sqlite3',
+    ],
+    excludes=['librosa', 'pygame', 'matplotlib', 'pandas', 'scipy', 'IPython', 'pytest'],
     noarchive=False,
-    optimize=0,
 )
 pyz = PYZ(a.pure)
-
 exe = EXE(
-    pyz,
-    a.scripts,
-    [],
-    exclude_binaries=True,
-    name='CapelHouse',
-    debug=False,
-    bootloader_ignore_signals=False,
-    strip=False,
-    upx=True,
-    console=False,
-    disable_windowed_traceback=False,
-    argv_emulation=False,
-    target_arch=None,
-    codesign_identity=None,
-    entitlements_file=None,
+    pyz, a.scripts, [], exclude_binaries=True,
+    name='CapelHouse', console=False,
 )
 coll = COLLECT(
-    exe,
-    a.binaries,
-    a.datas,
-    strip=False,
-    upx=True,
-    upx_exclude=[],
+    exe, a.binaries, a.datas,
     name='CapelHouse',
 )
